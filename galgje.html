@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Red Antoine! - Galgje</title>
+    <style>
+        body {
+            background-color: #ffc0cb;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        h1 { color: #d00000; text-shadow: 2px 2px white; margin-bottom: 10px; }
+        
+        #antoine-status { font-size: 80px; margin: 20px; transition: transform 0.3s; }
+
+        #word-display {
+            font-size: 40px;
+            letter-spacing: 10px;
+            margin: 20px;
+            color: #d00000;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #message {
+            font-size: 22px;
+            font-weight: bold;
+            color: #b00000;
+            height: 60px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        #keyboard {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 500px;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .key {
+            width: 42px;
+            height: 42px;
+            background: white;
+            border: 2px solid #ff4d6d;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 3px 0 #ff4d6d;
+            padding-bottom: 3px; 
+            box-sizing: border-box;
+        }
+
+        .key.disabled { background: #eee; cursor: not-allowed; opacity: 0.4; box-shadow: none; transform: translateY(3px); }
+        .key.correct { background: #28a745 !important; color: white; border-color: #28a745; }
+        .key.wrong { background: #d00000 !important; color: white; border-color: #d00000; }
+
+        #lives { font-size: 24px; margin: 10px; color: #d00000; }
+
+        #reset-container { height: 60px; margin-top: 20px; }
+        .btn-reset {
+            padding: 12px 30px;
+            background: #ff4d6d;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: none; 
+        }
+
+        .nav-back {
+            position: fixed; bottom: 20px; left: 20px;
+            background-color: #ff4d6d; color: white;
+            padding: 10px 20px; border-radius: 25px;
+            text-decoration: none; font-weight: bold;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .heart { position: fixed; color: red; font-size: 20px; z-index: -1; animation: fly 6s linear infinite; }
+        @keyframes fly { 0% { transform: translateY(110vh); opacity: 1; } 100% { transform: translateY(-10vh); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <a href="woordzoeker.html" class="nav-back">🔍 Woordzoeker</a>
+
+    <h1>🆘 Red Antoine! 🆘</h1>
+    
+    <div id="antoine-status">🤵‍♂️</div>
+    <div id="lives">Levens: ❤️❤️❤️❤️❤️❤️</div>
+    
+    <div id="word-display"></div>
+    <div id="message"></div>
+
+    <div id="keyboard"></div>
+
+    <div id="reset-container">
+        <button id="reset-btn" class="btn-reset" onclick="initGame()">Opnieuw Spelen</button>
+    </div>
+
+    <script>
+        const words = [
+            "MAXINE", "ANTOINE", "CADOT", "VANGHELUWE", "LIEVESTE", "KNAPPERD", "ODIL", "FANNY", "PIPI",
+            "MIAMI", "MADRID", "BELGIE", "TAFEL", "LIONKING", "VLIEGTUIG", "THUIS", "LIEFDE", "VERTROUWEN",
+            "TROTS", "PUUR", "OPRECHT", "EUFORIE", "GELUK", "VRIENDSCHAP", "CHEMIE", "AVONTUUR", "ONTMOETING",
+            "DEGROTEVRAAG", "SAMEN", "TOEKOMST", "DINER", "KAARSEN", "DYNAMIEK", "ATTRACTIE", "RESONANTIE",
+            "INTIMITEIT", "ESCALATIE", "SYNC", "KATALYSATOR", "ALTIJD", "VOORALTIJD", "BEDANKT", "STEUN",
+            "MISJE", "KUSJE", "HARTJE", "ZALIG", "MATCH", "VOORELKAAR", "GELUKKIGSTE"
+        ];
+
+        let selectedWord = "";
+        let guessedLetters = [];
+        let mistakes = 0;
+        const maxMistakes = 6;
+        let gameOver = false;
+
+        function initGame() {
+            selectedWord = words[Math.floor(Math.random() * words.length)].toUpperCase();
+            guessedLetters = [];
+            mistakes = 0;
+            gameOver = false;
+            document.getElementById('reset-btn').style.display = "none";
+            document.getElementById('antoine-status').innerText = "🤵‍♂️";
+            document.getElementById('message').innerText = "Raad het woord en red je ventje!";
+            createKeyboard();
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            let display = "";
+            let allGuessed = true;
+            for (let char of selectedWord) {
+                if (guessedLetters.includes(char)) {
+                    display += char;
+                } else {
+                    display += "_";
+                    allGuessed = false;
+                }
+            }
+            document.getElementById('word-display').innerText = display.split('').join(' ');
+
+            let hearts = "Levens: ";
+            for (let i = 0; i < (maxMistakes - mistakes); i++) hearts += "❤️";
+            document.getElementById('lives').innerText = hearts;
+
+            if (allGuessed) {
+                document.getElementById('antoine-status').innerText = "🥳💍";
+                document.getElementById('message').innerText = "Oef! Je hebt me gered! Je bent echt mijn heldin. ❤️";
+                endGame();
+            } else if (mistakes >= maxMistakes) {
+                document.getElementById('antoine-status').innerText = "👻🥀";
+                document.getElementById('message').innerText = "Hou je niet van mij? 🥺 (Het woord was: " + selectedWord + ")";
+                endGame();
+            }
+        }
+
+        function endGame() {
+            gameOver = true;
+            disableAllKeys();
+            document.getElementById('reset-btn').style.display = "block";
+        }
+
+        function createKeyboard() {
+            const kb = document.getElementById('keyboard');
+            kb.innerHTML = "";
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").forEach(l => {
+                const btn = document.createElement('div');
+                btn.className = 'key';
+                btn.id = "key-" + l;
+                btn.innerText = l;
+                btn.onclick = () => handleGuess(l);
+                kb.appendChild(btn);
+            });
+        }
+
+        function handleGuess(letter) {
+            if (gameOver || guessedLetters.includes(letter)) return;
+
+            const btn = document.getElementById("key-" + letter);
+            guessedLetters.push(letter);
+            
+            if (selectedWord.includes(letter)) {
+                if(btn) btn.classList.add('correct', 'disabled');
+            } else {
+                mistakes++;
+                if(btn) btn.classList.add('wrong', 'disabled');
+            }
+            updateDisplay();
+        }
+
+        window.onkeydown = (e) => {
+            const key = e.key.toUpperCase();
+            if (key.length === 1 && key >= 'A' && key <= 'Z') handleGuess(key);
+        };
+
+        function disableAllKeys() {
+            document.querySelectorAll('.key').forEach(k => k.classList.add('disabled'));
+        }
+
+        setInterval(() => {
+            const h = document.createElement('div');
+            h.className = 'heart'; h.innerHTML = '❤️';
+            h.style.left = Math.random() * 100 + 'vw';
+            document.body.appendChild(h);
+            setTimeout(() => h.remove(), 6000);
+        }, 500);
+
+        initGame();
+    </script>
+</body>
+</html>

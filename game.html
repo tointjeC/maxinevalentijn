@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>The Road to Maxine - Trilogie</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #ffc0cb; font-family: 'Comic Sans MS', cursive; }
+        canvas { display: block; background: linear-gradient(#1e3799, #ffc0cb); }
+        #ui { position: fixed; top: 20px; width: 100%; text-align: center; color: white; text-shadow: 2px 2px #d00000; font-size: 28px; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="ui">❤️ LEVEL 1: VERSLA ARTHUR ❤️</div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// LAAD DE GEMEENSCHAPPELIJKE AFBEELDING
+const spriteSheet = new Image();
+spriteSheet.src = 'sprites.png'; 
+
+let currentLevel = 1;
+const gravity = 0.8;
+let gameActive = true;
+let winState = false;
+
+const player = {
+    x: 100, y: 100, width: 90, height: 120,
+    dy: 0, jumpForce: -17, grounded: false, speed: 7,
+    frameX: 0, lastDirection: 'right'
+};
+
+let projectiles = [];
+
+function getLevel(lvl) {
+    if(lvl === 1) {
+        return {
+            name: "LEVEL 1: HET GEVECHT MET ARTHUR",
+            finish: 4000,
+            enemies: [{x: 1500, y: canvas.height-180, w: 80, h: 80, name: "ARTHUR", color: "#55efc4", hp: 3, speedX: 2}],
+            platforms: [
+                {x: 0, y: canvas.height-100, w: 1200, h: 100},
+                {x: 1400, y: canvas.height-250, w: 300, h: 30},
+                {x: 1800, y: canvas.height-100, w: 2500, h: 100}
+            ]
+        };
+    } else if(lvl === 2) {
+        return {
+            name: "LEVEL 2: FELIX ZIJN TERREUR",
+            finish: 4000,
+            enemies: [{x: 1500, y: canvas.height-180, w: 80, h: 80, name: "FELIX", color: "#a29bfe", hp: 5, speedX: 4}],
+            platforms: [
+                {x: 0, y: canvas.height-100, w: 800, h: 100},
+                {x: 1000, y: canvas.height-300, w: 200, h: 30},
+                {x: 1400, y: canvas.height-500, w: 200, h: 30},
+                {x: 1800, y: canvas.height-100, w: 2500, h: 100}
+            ]
+        };
+    } else {
+        return {
+            name: "LEVEL 3: DE WEG NAAR MAXINE",
+            finish: 5000,
+            enemies: [],
+            platforms: [
+                {x: 0, y: canvas.height-100, w: 500, h: 100},
+                {x: 700, y: canvas.height-250, w: 150, h: 30},
+                {x: 1000, y: canvas.height-450, w: 150, h: 30},
+                {x: 1400, y: canvas.height-300, w: 150, h: 30},
+                {x: 1800, y: canvas.height-500, w: 150, h: 30},
+                {x: 2300, y: canvas.height-100, w: 3000, h: 100}
+            ]
+        };
+    }
+}
+
+let levelData = getLevel(currentLevel);
+const keys = {};
+
+window.addEventListener('keydown', e => {
+    keys[e.code] = true;
+    if(e.code === 'Space') shoot();
+});
+window.addEventListener('keyup', e => keys[e.code] = false);
+
+function shoot() {
+    projectiles.push({
+        x: player.x + (player.lastDirection === 'right' ? 80 : -10),
+        y: player.y + 50,
+        vx: player.lastDirection === 'right' ? 12 : -12
+    });
+}
+
+function update() {
+    if(!gameActive) return;
+
+    if(keys['ArrowRight']) { player.x += player.speed; player.lastDirection = 'right'; player.frameX = (Math.floor(Date.now()/150)%3); }
+    else if(keys['ArrowLeft']) { player.x -= player.speed; player.lastDirection = 'left'; player.frameX = (Math.floor(Date.now()/150)%3); }
+    else player.frameX = 0;
+
+    if(keys['ArrowUp'] && player.grounded) { player.dy = player.jumpForce; player.grounded = false; }
+    
+    player.dy += gravity;
+    player.y += player.dy;
+
+    player.grounded = false;
+    levelData.platforms.forEach(p => {
+        if(player.x+30 < p.x+p.w && player.x+60 > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
+            player.y = p.y - player.height;
+            player.dy = 0;
+            player.grounded = true;
+        }
+    });
+
+    levelData.enemies.forEach(en => {
+        if(!en.defeated) {
+            en.x += en.speedX;
+            if(en.x > 3500 || en.x < 1200) en.speedX *= -1;
+            if(player.x < en.x+en.w && player.x+player.width > en.x && player.y < en.y+en.h && player.y+player.height > en.y) {
+                player.x = 100; player.y = 100;
+            }
+        }
+    });
+
+    projectiles.forEach((proj, pi) => {
+        proj.x += proj.vx;
+        levelData.enemies.forEach(en => {
+            if(!en.defeated && proj.x > en.x && proj.x < en.x+en.w && proj.y > en.y && proj.y < en.y+en.h) {
+                en.hp--;
+                projectiles.splice(pi, 1);
+                if(en.hp <= 0) en.defeated = true;
+            }
+        });
+    });
+
+    if(player.y > canvas.height) { player.x = 100; player.y = 100; }
+
+    if(player.x > levelData.finish) {
+        if(currentLevel < 3) {
+            currentLevel++;
+            levelData = getLevel(currentLevel);
+            player.x = 100; player.y = 100;
+            document.getElementById('ui').innerText = levelData.name;
+        } else {
+            winState = true; gameActive = false;
+        }
+    }
+
+    draw();
+    requestAnimationFrame(update);
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const camX = player.x - canvas.width/3;
+
+    ctx.save();
+    ctx.translate(-camX, 0);
+
+    levelData.platforms.forEach(p => {
+        ctx.fillStyle = "#2d3436"; ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = "#ff7675"; ctx.fillRect(p.x, p.y, p.w, 8);
+    });
+
+    // ANTOINE TEKENEN (Linkerkant van de sheet)
+    // We knippen kleine blokjes van 200x200 aan de linkerkant
+    ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
+
+    // MONSTERS
+    levelData.enemies.forEach(en => {
+        if(!en.defeated) {
+            ctx.fillStyle = en.color; ctx.fillRect(en.x, en.y, en.w, en.h);
+            ctx.fillStyle = "white"; ctx.fillText(en.name + " (" + en.hp + ")", en.x, en.y-10);
+        }
+    });
+
+    // MAXINE TEKENEN (Rechterkant van de sheet - Alleen Level 3)
+    if(currentLevel === 3) {
+        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 4800, canvas.height-380, 180, 280);
+    }
+
+    ctx.fillStyle = "yellow";
+    projectiles.forEach(p => ctx.fillRect(p.x, p.y, 20, 10));
+
+    ctx.restore();
+
+    if(winState) {
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.fillStyle = "white"; ctx.textAlign = "center";
+        ctx.font = "30px Arial";
+        ctx.fillText("GEWONNEN! JIJ BENT DE ENIGE VOOR MAXINE! ❤️", canvas.width/2, canvas.height/2);
+    }
+}
+
+update();
+</script>
+</body>
+</html>

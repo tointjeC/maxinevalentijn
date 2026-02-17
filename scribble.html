@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Antoine & Maxine Scribble (Mini)</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 20px; }
+    .row { display: flex; gap: 16px; flex-wrap: wrap; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 14px; max-width: 720px; }
+    canvas { border: 2px solid #111; border-radius: 10px; touch-action: none; }
+    button { padding: 10px 12px; border-radius: 10px; border: 1px solid #ccc; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .options button { width: 100%; text-align: left; margin: 6px 0; }
+    .pill { display: inline-block; padding: 4px 10px; border: 1px solid #ddd; border-radius: 999px; }
+    input { padding: 10px; border-radius: 10px; border: 1px solid #ccc; width: min(420px, 100%); }
+    .small { font-size: 12px; color: #555; }
+    .good { color: #0a7; font-weight: 600; }
+    .bad { color: #b33; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Mini Scribble 🎨</h1>
+  <p class="small">Speel dit via screenshare/Discord: Speler A tekent, speler B raadt. Geen account nodig.</p>
+
+  <div class="row">
+    <div class="card">
+      <h2>Ronde</h2>
+      <div class="row">
+        <span class="pill">Tijd: <b id="time">—</b></span>
+        <span class="pill">Status: <b id="status">Klaar</b></span>
+      </div>
+      <p>
+        <button id="startBtn">Start round (toon 3 opties)</button>
+        <button id="revealBtn" disabled>Toon prompt (voor tekenaar)</button>
+        <button id="newBtn" disabled>Nieuwe ronde</button>
+      </p>
+
+      <div id="options" class="options"></div>
+
+      <p><b>Prompt (alleen tekenaar):</b> <span id="prompt">—</span></p>
+      <p class="small">Tip: klik “Toon prompt” en draai je scherm even weg van de raden-speler 😉</p>
+    </div>
+
+    <div class="card">
+      <h2>Tekenbord</h2>
+      <canvas id="board" width="640" height="420"></canvas>
+      <p>
+        <button id="clearBtn">Clear</button>
+        <button id="eraserBtn">Eraser</button>
+        <button id="penBtn">Pen</button>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Raden</h2>
+      <p><input id="guess" placeholder="Typ je gok..." disabled /></p>
+      <p id="feedback" class="small">—</p>
+      <div id="log" class="small"></div>
+    </div>
+  </div>
+
+<script>
+  // ====== PROMPTS ======
+  const words = [
+    "Pizza","Fiets","Paraplu","Koffie","Smartphone","Rugzak","Sleutel","Zonnebril","Kat","Hond",
+    "Goudvis","Konijn","Pinguïn","Schildpad","Olifant","Giraf","Leeuw","Slang","Bij","Vlinder",
+    "Boom","Bloem","Cactus","Paddenstoel","Wolk","Regenboog","Sneeuwman","Bliksem","Vulkaan","Planeet",
+    "Raket","Robot","Dinosaurus","Spook","Heks","Ridder","Piraat","Ninja","Prinses","Kroon",
+    "Ring","Diamant","Geld","Cadeau","Kaars","Taart","IJsje","Hamburger","Frietjes","Sushi",
+    "Watermeloen","Banaan","Appel","Aardbei","Broccoli","Fles","Glas","Lepel","Vork","Mes",
+    "Stoel","Bank","Bed","Lamp","Spiegel","Klok","Deur","Raam","Trap","Lift",
+    "Auto","Bus","Trein","Vliegtuig","Boot","Skateboard","Scooter","Stoplicht","Routekaart","Kompas",
+    "Bal","Tennisracket","Voetbal","Basketbal","Zwembril","Medaille","Gitaar","Piano","Microfoon","Koptelefoon",
+    "Camera","Laptop","Boek","Potlood","Verfkwast","Schaar","Tandenborstel","Shampoo","T-shirt","Schoen"
+  ];
+
+  const sentences = [
+    "Een kat in een kartonnen doos.",
+    "Iemand die een pizza laat vallen.",
+    "Een pinguïn met een zonnebril.",
+    "Een hond die een ballon vasthoudt.",
+    "Een robot die koffie maakt.",
+    "Een dino die probeert te skateboarden.",
+    "Een spook dat bang is van een muis.",
+    "Een olifant op een fiets.",
+    "Een regenboog boven een vulkaan.",
+    "Een ninja die een cake bakt.",
+    "Iemand die in slaap valt tijdens een meeting.",
+    "Een telefoon die in het water valt.",
+    "Een vliegtuig dat bijna een wolk aanraakt.",
+    "Een trein vol met dieren.",
+    "Een ridder die een selfie neemt.",
+    "Een heks die een smoothie mixt.",
+    "Een piraat met een GPS.",
+    "Een cactus die water drinkt.",
+    "Een sneeuwman op het strand.",
+    "Een bij die een bloem high-fivet.",
+    "Antoine die Maxine probeert te imponeren met een tekening.",
+    "Maxine die Antoine uitlacht om zijn slechte tekening.",
+    "Antoine en Maxine die tegelijk Skribbl spelen.",
+    "Een hartje dat van België naar Madrid vliegt.",
+    "Een berichtje: ik mis je.",
+    "Iemand die met 10 boodschappentassen struikelt.",
+    "Een hond die denkt dat hij een kat is.",
+    "Een kat die denkt dat hij een koning is.",
+    "Een robot met emoties.",
+    "Een pizza met ananas discussie.",
+    "Een laptop die rookt van stress.",
+    "Een wekker die een marathon loopt.",
+    "Een koffietas met superkrachten.",
+    "Een paraplu die wegvliegt in de wind.",
+    "Een stoel die danst.",
+    "Een voetbal die de maan raakt.",
+    "Een microfoon die zingt.",
+    "Een boek dat schreeuwt van spoilers.",
+    "Een spiegel die liegt.",
+    "Een sleutel die zich verstopt.",
+    "Een hond die een diploma haalt.",
+    "Een kat die chef-kok is.",
+    "Een pinguïn die ijs verkoopt.",
+    "Een giraf die niet door de deur past.",
+    "Een schildpad die een race wint.",
+    "Antoine die zegt: ik ben rustig, maar hij heeft stress.",
+    "Maxine die in Madrid verdwaalt maar doet alsof alles gepland is.",
+    "Een video call met 1% batterij.",
+    "Een treinreis die eindigt met verkeerde stad.",
+    "Een koffer die ontploft van te veel kleding."
+  ];
+
+  // Combine prompts: mostly words, sometimes sentences
+  const allPrompts = [...words, ...sentences];
+
+  function pick3() {
+    const set = new Set();
+    while (set.size < 3) {
+      set.add(allPrompts[Math.floor(Math.random() * allPrompts.length)]);
+    }
+    return [...set];
+  }
+
+  // ====== GAME STATE ======
+  let chosenPrompt = null;
+  let roundActive = false;
+  let timeLeft = 0;
+  let timerId = null;
+
+  const startBtn = document.getElementById("startBtn");
+  const revealBtn = document.getElementById("revealBtn");
+  const newBtn = document.getElementById("newBtn");
+  const optionsEl = document.getElementById("options");
+  const promptEl = document.getElementById("prompt");
+  const timeEl = document.getElementById("time");
+  const statusEl = document.getElementById("status");
+  const guessEl = document.getElementById("guess");
+  const feedbackEl = document.getElementById("feedback");
+  const logEl = document.getElementById("log");
+
+  function resetRoundUI() {
+    optionsEl.innerHTML = "";
+    promptEl.textContent = "—";
+    chosenPrompt = null;
+    roundActive = false;
+    timeEl.textContent = "—";
+    statusEl.textContent = "Klaar";
+    guessEl.value = "";
+    guessEl.disabled = true;
+    feedbackEl.textContent = "—";
+    logEl.innerHTML = "";
+    revealBtn.disabled = true;
+    newBtn.disabled = true;
+    clearTimer();
+  }
+
+  function clearTimer() {
+    if (timerId) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  function startTimer(seconds) {
+    timeLeft = seconds;
+    timeEl.textContent = `${timeLeft}s`;
+    statusEl.textContent = "Bezig";
+    clearTimer();
+    timerId = setInterval(() => {
+      timeLeft -= 1;
+      timeEl.textContent = `${timeLeft}s`;
+      if (timeLeft <= 0) {
+        clearTimer();
+        roundActive = false;
+        statusEl.textContent = "Tijd op";
+        feedbackEl.innerHTML = `<span class="bad">Tijd op.</span> Antwoord was: <b>${escapeHtml(chosenPrompt)}</b>`;
+        guessEl.disabled = true;
+        newBtn.disabled = false;
+      }
+    }, 1000);
+  }
+
+  function escapeHtml(s) {
+    return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+  }
+
+  startBtn.addEventListener("click", () => {
+    resetRoundUI();
+    const opts = pick3();
+    optionsEl.innerHTML = "<p><b>Kies 1 van de 3:</b></p>";
+    opts.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.textContent = opt;
+      btn.onclick = () => choosePrompt(opt);
+      optionsEl.appendChild(btn);
+    });
+  });
+
+  function choosePrompt(p) {
+    chosenPrompt = p;
+    optionsEl.innerHTML = `<p class="small">Prompt gekozen. Klik “Toon prompt” (alleen tekenaar).</p>`;
+    revealBtn.disabled = false;
+    newBtn.disabled = true;
+    statusEl.textContent = "Prompt gekozen";
+  }
+
+  revealBtn.addEventListener("click", () => {
+    if (!chosenPrompt) return;
+    promptEl.textContent = chosenPrompt;
+    roundActive = true;
+    guessEl.disabled = false;
+    guessEl.focus();
+    feedbackEl.textContent = "Raden maar!";
+    startTimer(60); // change to 90 if you want
+    revealBtn.disabled = true;
+  });
+
+  newBtn.addEventListener("click", () => {
+    resetRoundUI();
+  });
+
+  // Guess handling (simple exact match, case-insensitive)
+  guessEl.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    if (!roundActive || !chosenPrompt) return;
+
+    const guess = guessEl.value.trim();
+    if (!guess) return;
+
+    const isCorrect = normalize(guess) === normalize(chosenPrompt);
+
+    logEl.innerHTML = `<div>Gok: <b>${escapeHtml(guess)}</b> ${isCorrect ? "✅" : ""}</div>` + logEl.innerHTML;
+    guessEl.value = "";
+
+    if (isCorrect) {
+      roundActive = false;
+      clearTimer();
+      statusEl.textContent = "Geraden!";
+      feedbackEl.innerHTML = `<span class="good">Correct!</span> Het was: <b>${escapeHtml(chosenPrompt)}</b>`;
+      guessEl.disabled = true;
+      newBtn.disabled = false;
+    } else {
+      feedbackEl.textContent = "Niet juist, probeer opnieuw!";
+    }
+  });
+
+  function normalize(s) {
+    return s
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // remove accents
+      .replace(/[^\w\s]/g, "")       // remove punctuation
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // ====== CANVAS DRAWING ======
+  const canvas = document.getElementById("board");
+  const ctx = canvas.getContext("2d");
+  ctx.lineWidth = 6;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  let drawing = false;
+  let eraser = false;
+
+  function getPos(evt) {
+    const rect = canvas.getBoundingClientRect();
+    const x = (evt.clientX ?? evt.touches?.[0]?.clientX) - rect.left;
+    const y = (evt.clientY ?? evt.touches?.[0]?.clientY) - rect.top;
+    return { x, y };
+  }
+
+  function startDraw(evt) {
+    drawing = true;
+    const { x, y } = getPos(evt);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    evt.preventDefault();
+  }
+
+  function draw(evt) {
+    if (!drawing) return;
+    const { x, y } = getPos(evt);
+    ctx.strokeStyle = eraser ? "#fff" : "#000";
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    evt.preventDefault();
+  }
+
+  function endDraw(evt) {
+    drawing = false;
+    evt.preventDefault();
+  }
+
+  canvas.addEventListener("mousedown", startDraw);
+  canvas.addEventListener("mousemove", draw);
+  window.addEventListener("mouseup", endDraw);
+
+  canvas.addEventListener("touchstart", startDraw, { passive: false });
+  canvas.addEventListener("touchmove", draw, { passive: false });
+  canvas.addEventListener("touchend", endDraw, { passive: false });
+
+  document.getElementById("clearBtn").addEventListener("click", () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  });
+  document.getElementById("eraserBtn").addEventListener("click", () => eraser = true);
+  document.getElementById("penBtn").addEventListener("click", () => eraser = false);
+
+  resetRoundUI();
+</script>
+</body>
+</html>

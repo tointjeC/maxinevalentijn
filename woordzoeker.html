@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Maxine's Woordzoeker</title>
+    <style>
+        body {
+            background-color: #ffc0cb;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1 { color: #d00000; text-shadow: 2px 2px white; margin-top: 20px; }
+
+        /* Vliegende hartjes */
+        .heart {
+            position: fixed;
+            color: red;
+            font-size: 20px;
+            user-select: none;
+            z-index: -1;
+            animation: fly 8s linear infinite;
+        }
+
+        @keyframes fly {
+            0% { transform: translateY(110vh); opacity: 1; }
+            100% { transform: translateY(-10vh); opacity: 0; }
+        }
+
+        /* Het Rooster */
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(12, 35px);
+            gap: 2px;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            border: 5px solid #ff4d6d;
+            box-shadow: 0px 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .cell {
+            width: 35px;
+            height: 35px;
+            background: #fffafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            user-select: none;
+            transition: 0.2s;
+            border-radius: 3px;
+        }
+
+        /* Kleuren voor de status */
+        .cell.selected { background-color: #ff4d6d; color: white; }
+        .cell.found { background-color: #28a745 !important; color: white; cursor: default; }
+
+        .word-list {
+            margin-top: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0px 5px 10px rgba(0,0,0,0.1);
+        }
+
+        .word-item {
+            display: inline-block;
+            margin: 5px 10px;
+            font-size: 16px;
+            color: #d00000;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .word-item.crossed {
+            text-decoration: line-through;
+            color: #aaa;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>💖 Maxine's Woordzoeker 💖</h1>
+
+    <div id="grid"></div>
+
+    <div class="word-list">
+        <h3>Zoek deze woorden:</h3>
+        <div id="word-container"></div>
+    </div>
+
+    <script>
+        const words = ["MAXINE", "ANTOINE", "MIAMI", "LOVEYOU", "ODIL", "FANNY", "PIPI", "KNAPPERD"];
+        const size = 12;
+        let grid = Array(size).fill().map(() => Array(size).fill(''));
+        let wordLocations = {}; // Slaat op welke cellen bij welk woord horen
+        let selectedCells = [];
+
+        // 1. Woorden plaatsen
+        function placeWords() {
+            words.forEach(word => {
+                let placed = false;
+                while (!placed) {
+                    const dir = Math.floor(Math.random() * 3); // 0: Hor, 1: Ver, 2: Diag
+                    const row = Math.floor(Math.random() * size);
+                    const col = Math.floor(Math.random() * size);
+                    
+                    if (canPlace(word, row, col, dir)) {
+                        wordLocations[word] = [];
+                        for (let i = 0; i < word.length; i++) {
+                            let r = row, c = col;
+                            if (dir === 0) c += i;
+                            if (dir === 1) r += i;
+                            if (dir === 2) { r += i; c += i; }
+                            
+                            grid[r][c] = word[i];
+                            wordLocations[word].push(`${r}-${c}`);
+                        }
+                        placed = true;
+                    }
+                }
+            });
+        }
+
+        function canPlace(word, row, col, dir) {
+            if (dir === 0 && col + word.length > size) return false;
+            if (dir === 1 && row + word.length > size) return false;
+            if (dir === 2 && (row + word.length > size || col + word.length > size)) return false;
+
+            for (let i = 0; i < word.length; i++) {
+                let r = row, c = col;
+                if (dir === 0) c += i;
+                if (dir === 1) r += i;
+                if (dir === 2) { r += i; c += i; }
+                if (grid[r][c] !== '' && grid[r][c] !== word[i]) return false;
+            }
+            return true;
+        }
+
+        // 2. Grid vullen met random letters
+        function fillEmpty() {
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    if (grid[r][c] === '') grid[r][c] = letters[Math.floor(Math.random() * 26)];
+                }
+            }
+        }
+
+        // 3. Teken het grid en logica voor selecteren
+        function drawGrid() {
+            const gridEl = document.getElementById('grid');
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.innerText = grid[r][c];
+                    cell.dataset.pos = `${r}-${c}`;
+                    
+                    cell.onclick = function() {
+                        if (this.classList.contains('found')) return;
+
+                        this.classList.toggle('selected');
+                        const pos = this.dataset.pos;
+
+                        if (this.classList.contains('selected')) {
+                            selectedCells.push(pos);
+                        } else {
+                            selectedCells = selectedCells.filter(p => p !== pos);
+                        }
+                        checkWords();
+                    };
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        // 4. Check of er een woord gevormd is
+        function checkWords() {
+            words.forEach(word => {
+                const locations = wordLocations[word];
+                const allFound = locations.every(loc => selectedCells.includes(loc));
+
+                if (allFound) {
+                    // Maak cellen groen
+                    locations.forEach(loc => {
+                        const cell = document.querySelector(`[data-pos="${loc}"]`);
+                        cell.classList.remove('selected');
+                        cell.classList.add('found');
+                    });
+                    // Streep woord door in lijst
+                    const wordItem = document.getElementById(`word-${word}`);
+                    if (wordItem) wordItem.classList.add('crossed');
+                }
+            });
+        }
+
+        // 5. Woordenlijst initialiseren
+        const container = document.getElementById('word-container');
+        words.forEach(w => {
+            const s = document.createElement('span');
+            s.className = 'word-item';
+            s.id = `word-${w}`;
+            s.innerText = w;
+            container.appendChild(s);
+        });
+
+        // Hartjes animatie
+        setInterval(() => {
+            const h = document.createElement('div');
+            h.className = 'heart';
+            h.innerHTML = '❤';
+            h.style.left = Math.random() * 100 + 'vw';
+            document.body.appendChild(h);
+            setTimeout(() => h.remove(), 8000);
+        }, 400);
+
+        placeWords();
+        fillEmpty();
+        drawGrid();
+    </script>
+</body>
+</html>
