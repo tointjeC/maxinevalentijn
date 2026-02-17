@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine</title>
+    <title>The Road to Maxine - The Final Adventure</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
@@ -14,7 +14,7 @@
 <body>
     <div class="vignette"></div>
     <div id="stats">❤️❤️❤️</div>
-    <div id="ui">LEVEL 1: Door de Bossen</div>
+    <div id="ui">LEVEL 1: HET LEVENDIGE BOS</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -38,24 +38,29 @@ function showSpeech(txt) { speechBubble.text = txt; speechBubble.timer = 120; }
 
 const player = {
     x: 100, y: 100, width: 80, height: 110,
-    dy: 0, jumpForce: -17, grounded: false, speed: 8,
-    frameX: 0
+    dy: 0, jumpForce: -16, grounded: false, speed: 9,
+    frameX: 0, jumpsLeft: 2 // DOUBLE JUMP!
 };
 
 let projectiles = [];
 let particles = [];
-let movingPlatforms = [];
 let decoration = [];
+let ambientParticles = [];
 
-function initDecor(lvl) {
+function initLevelDecor(lvl) {
     decoration = [];
-    for(let i=0; i<60; i++) {
-        decoration.push({
+    ambientParticles = [];
+    for(let i=0; i<40; i++) {
+        ambientParticles.push({
             x: Math.random() * 10000,
-            y: Math.random() * 400,
-            s: 0.5 + Math.random(),
-            type: lvl === 1 ? 'tree' : 'cloud'
+            y: Math.random() * canvas.height,
+            s: 2 + Math.random() * 4,
+            speedY: 1 + Math.random() * 2,
+            angle: Math.random() * Math.PI * 2
         });
+    }
+    for(let i=0; i<25; i++) {
+        decoration.push({ x: i * 500, y: 50 + Math.random()*200, s: 0.5 + Math.random() });
     }
 }
 
@@ -63,63 +68,43 @@ function handleDeath() {
     lives--;
     shakeTime = 30;
     document.getElementById('stats').innerText = "❤️".repeat(Math.max(0, lives));
-    if(lives <= 0) {
-        alert("Antoine geeft nooit op! Probeer het opnieuw.");
-        location.reload();
-    } else {
-        player.x = 100;
-        player.y = 100;
-        player.dy = 0;
-        showSpeech("Oei! Nog eens...");
-    }
+    if(lives <= 0) { alert("Game Over! Antoine probeert het opnieuw."); location.reload(); }
+    else { player.x = 100; player.y = 100; player.dy = 0; showSpeech("Oei! Nog eens."); }
 }
 
 function getLevel(lvl) {
-    movingPlatforms = [];
-    initDecor(lvl);
+    initLevelDecor(lvl);
     document.getElementById('stats').innerText = "❤️".repeat(lives);
-
     if(lvl === 1) {
         return {
-            name: "LEVEL 1: Door de Bossen",
-            pipeX: 8500,
-            color: "#1e3c72",
+            name: "LEVEL 1:DOOR HET BOS, pipeX: 8500, color: "#1e3c72",
             enemies: [{x: 4500, y: canvas.height-350, w: 200, h: 250, name: "ARTHUR", color: "#3d2b1f", hp: 8, speedX: 3, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1500, h: 100},
-                {x: 1800, y: canvas.height-250, w: 400, h: 40},
-                {x: 2400, y: canvas.height-400, w: 400, h: 40},
-                {x: 3200, y: canvas.height-100, w: 2200, h: 100}, // Arena
-                {x: 5800, y: canvas.height-250, w: 300, h: 250}, // Obstakel na baas
-                {x: 6500, y: canvas.height-400, w: 300, h: 40},
-                {x: 7200, y: canvas.height-250, w: 400, h: 250},
-                {x: 8200, y: canvas.height-100, w: 1000, h: 100} // Buis platform
+                {x: 1700, y: canvas.height-250, w: 400, h: 40},
+                {x: 2300, y: canvas.height-400, w: 400, h: 40},
+                {x: 3000, y: canvas.height-100, w: 2500, h: 100}, // Arena
+                {x: 5800, y: canvas.height-250, w: 400, h: 40},
+                {x: 6500, y: canvas.height-400, w: 400, h: 40},
+                {x: 7300, y: canvas.height-100, w: 1500, h: 100}
             ]
         };
     } else if(lvl === 2) {
-        movingPlatforms.push({x: 1200, y: canvas.height-100, w: 500, h: 100, range: 1400, startX: 1200, speed: 0.0008});
         return {
-            name: "LEVEL 2: DE STALEN STAD ",
-            pipeX: 9500,
-            color: "#2c003e",
-            enemies: [{x: 6000, y: canvas.height-450, w: 300, h: 350, name: "FELIX", color: "#2d3436", hp: 12, speedX: 4, defeated: false}],
+            name: "LEVEL 2: DE STAD, pipeX: 9500, color: "#2c003e",
+            enemies: [{x: 5500, y: canvas.height-450, w: 300, h: 350, name: "FELIX", color: "#2d3436", hp: 12, speedX: 4, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1200, h: 100},
-                {x: 3500, y: canvas.height-200, w: 3000, h: 200},
-                {x: 6800, y: canvas.height-400, w: 400, h: 40},
-                {x: 7600, y: canvas.height-550, w: 400, h: 40},
-                {x: 8400, y: canvas.height-300, w: 400, h: 300},
-                {x: 9200, y: canvas.height-100, w: 1000, h: 100}
+                {x: 1400, y: canvas.height-250, w: 400, h: 40},
+                {x: 2100, y: canvas.height-400, w: 400, h: 40},
+                {x: 2800, y: canvas.height-100, w: 4000, h: 100}, // Arena
+                {x: 7200, y: canvas.height-300, w: 400, h: 40},
+                {x: 8000, y: canvas.height-450, w: 400, h: 40},
+                {x: 8800, y: canvas.height-100, w: 1500, h: 100}
             ]
         };
     } else {
-        return { 
-            name: "LEVEL 3: HET LIEFDESKASTEEL", 
-            pipeX: 99999, 
-            color: "#ff75a0", 
-            enemies: [], 
-            platforms: [{x: 0, y: canvas.height-100, w: 5000, h: 100}] 
-        };
+        return { name: "LEVEL 3: MAXINE'S KASTEEL", pipeX: 99999, color: "#ff75a0", enemies: [], platforms: [{x: 0, y: canvas.height-100, w: 5000, h: 100}] };
     }
 }
 
@@ -127,66 +112,52 @@ let levelData = getLevel(currentLevel);
 const keys = {};
 
 window.addEventListener('keydown', e => { 
-    keys[e.code] = true; 
-    if(e.code === 'Space') {
-        projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 22 });
-        if(Math.random() > 0.8) showSpeech("Pak aan!");
+    if(e.code === 'ArrowUp' && player.jumpsLeft > 0) {
+        player.dy = player.jumpForce;
+        player.jumpsLeft--;
+        player.grounded = false;
     }
+    keys[e.code] = true; 
+    if(e.code === 'Space') projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 22 });
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
 function update() {
-    if(winState) { 
+    if(winState) {
         if(particles.length < 50) particles.push({ x: Math.random()*canvas.width, y: canvas.height+50, vy: -Math.random()*5-2, vx: (Math.random()-0.5)*4, s: 15, t: "❤️"});
-        particles.forEach((p, i) => { p.y += p.vy; p.x += p.vx; if(p.y < -50) particles.splice(i, 1); });
-        draw(); requestAnimationFrame(update); return; 
+        particles.forEach(p => { p.y += p.vy; p.x += p.vx; });
+        draw(); requestAnimationFrame(update); return;
     }
 
     if(keys['ArrowRight']) { player.x += player.speed * timeScale; player.frameX = (Math.floor(Date.now()/120)%3); }
     else if(keys['ArrowLeft']) { player.x -= player.speed * timeScale; player.frameX = (Math.floor(Date.now()/120)%3); }
     else player.frameX = 0;
 
-    if(timeScale < 1) timeScale += 0.01;
-    if(speechBubble.timer > 0) speechBubble.timer--;
-
-    movingPlatforms.forEach(mp => {
-        let oldX = mp.x;
-        mp.x = mp.startX + (Math.sin(Date.now() * mp.speed) + 1) / 2 * mp.range;
-        if(player.grounded && player.x+40 > mp.x && player.x+40 < mp.x+mp.w && Math.abs(player.y+player.height - mp.y) < 10) player.x += (mp.x - oldX);
-    });
-
     player.dy += gravity * timeScale; player.y += player.dy;
-    if(keys['ArrowUp'] && player.grounded) { player.dy = player.jumpForce; player.grounded = false; }
-
-    // Check of je valt!
     if(player.y > canvas.height) handleDeath();
 
     player.grounded = false;
-    [...levelData.platforms, ...movingPlatforms].forEach(p => {
+    levelData.platforms.forEach(p => {
         if(player.x+20 < p.x+p.w && player.x+60 > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
-            player.y = p.y - player.height; player.dy = 0; player.grounded = true;
+            player.y = p.y - player.height; player.dy = 0; player.grounded = true; player.jumpsLeft = 2;
         }
     });
 
-    // Buis detectie
-    if(Math.abs(player.x - levelData.pipeX) < 60 && player.grounded) {
-        showSpeech("Daar is de uitgang!");
-        if(player.x > levelData.pipeX + 20) {
-            if(currentLevel < 3) {
-                currentLevel++; levelData = getLevel(currentLevel);
-                player.x = 100; player.y = 100;
-                document.getElementById('ui').innerText = levelData.name;
-                showSpeech("Nieuwe wereld!");
-            }
-        }
-    }
+    // Ambient Animation
+    ambientParticles.forEach(p => {
+        p.y += p.speedY; p.angle += 0.02;
+        if(p.y > canvas.height) p.y = -20;
+    });
 
+    if(Math.abs(player.x - levelData.pipeX) < 50 && player.grounded) {
+        if(currentLevel < 3) { currentLevel++; levelData = getLevel(currentLevel); player.x = 100; player.y = 100; document.getElementById('ui').innerText = levelData.name; }
+    }
     if(currentLevel === 3 && player.x > 2500) winState = true;
 
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             en.x += en.speedX * timeScale;
-            if(Math.abs(player.x - en.x) < 100 && player.y > en.y - 100) { handleDeath(); player.x -= 200; }
+            if(Math.abs(player.x - en.x) < 100 && player.y > en.y - 100) handleDeath();
         }
     });
 
@@ -195,36 +166,35 @@ function update() {
         levelData.enemies.forEach(en => {
             if(!en.defeated && proj.x > en.x && proj.x < en.x+en.w && proj.y > en.y && proj.y < en.y+en.h) {
                 en.hp--; projectiles.splice(pi, 1); shakeTime = 10;
-                if(en.hp <= 0) { en.defeated = true; timeScale = 0.1; showSpeech("Eindelijk!"); }
+                if(en.hp <= 0) { en.defeated = true; timeScale = 0.1; showSpeech("Boem!"); }
             }
         });
     });
+
+    if(timeScale < 1) timeScale += 0.01;
+    if(speechBubble.timer > 0) speechBubble.timer--;
 
     draw(); requestAnimationFrame(update);
 }
 
 function draw() {
-    ctx.fillStyle = levelData.color;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = levelData.color; ctx.fillRect(0,0,canvas.width,canvas.height);
     const camX = player.x - canvas.width/3;
-
-    ctx.save();
-    if (shakeTime > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shakeTime--; }
+    ctx.save(); if(shakeTime > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shakeTime--; }
 
     decoration.forEach(d => {
         ctx.fillStyle = "rgba(255,255,255,0.1)";
-        let dx = (d.x - camX * 0.3) % 10000;
-        if(d.type === 'tree') {
-            ctx.beginPath(); ctx.moveTo(dx, canvas.height); ctx.lineTo(dx+40, canvas.height-150*d.s); ctx.lineTo(dx+80, canvas.height); ctx.fill();
-        } else {
-            ctx.beginPath(); ctx.arc(dx, d.y, 30*d.s, 0, Math.PI*2); ctx.fill();
-        }
+        ctx.beginPath(); ctx.arc((d.x - camX*0.2)%10000, d.y, 50*d.s, 0, Math.PI*2); ctx.fill();
     });
 
-    ctx.save();
-    ctx.translate(-camX, 0);
+    ambientParticles.forEach(p => {
+        ctx.fillStyle = currentLevel === 1 ? "#2ecc71" : "#f1c40f";
+        ctx.save(); ctx.translate((p.x - camX)%10000, p.y); ctx.rotate(p.angle);
+        ctx.fillRect(0,0,p.s,p.s); ctx.restore();
+    });
 
-    levelData.platforms.concat(movingPlatforms).forEach(p => {
+    ctx.save(); ctx.translate(-camX, 0);
+    levelData.platforms.forEach(p => {
         ctx.fillStyle = "#1a1a1a"; ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 10); ctx.fill();
         ctx.fillStyle = (currentLevel === 3) ? "#ff9eb5" : "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 8);
     });
@@ -232,7 +202,6 @@ function draw() {
     if(currentLevel < 3) {
         ctx.fillStyle = "#27ae60"; ctx.fillRect(levelData.pipeX, canvas.height-220, 100, 120);
         ctx.fillStyle = "#2ecc71"; ctx.fillRect(levelData.pipeX-10, canvas.height-250, 120, 40);
-        ctx.fillStyle = "white"; ctx.font = "bold 16px sans-serif"; ctx.fillText("VOLGEND LEVEL", levelData.pipeX-10, canvas.height-265);
     }
 
     levelData.enemies.forEach(en => {
@@ -242,22 +211,19 @@ function draw() {
         }
     });
 
-    ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
-
+    ctx.drawImage(spriteSheet, player.frameX*210, 150, 200, 300, player.x, player.y, player.width, player.height);
     if(speechBubble.timer > 0) {
-        ctx.fillStyle = "white"; ctx.beginPath(); ctx.roundRect(player.x + 80, player.y - 60, 200, 45, 12); ctx.fill();
-        ctx.fillStyle = "black"; ctx.font = "bold 16px sans-serif"; ctx.fillText(speechBubble.text, player.x + 95, player.y - 32);
+        ctx.fillStyle = "white"; ctx.beginPath(); ctx.roundRect(player.x+80, player.y-60, 180, 40, 10); ctx.fill();
+        ctx.fillStyle = "black"; ctx.font = "bold 16px Arial"; ctx.fillText(speechBubble.text, player.x+95, player.y-35);
     }
-
     if(currentLevel === 3) ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2800, canvas.height-380, 180, 280);
 
     ctx.fillStyle = "yellow"; projectiles.forEach(p => ctx.fillRect(p.x, p.y, 40, 12));
-
     ctx.restore(); ctx.restore();
 
     if(winState) {
         ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 40px sans-serif";
+        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 40px Arial";
         ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2);
         particles.forEach(p => { ctx.font = "20px Arial"; ctx.fillText(p.t, p.x, p.y); });
     }
