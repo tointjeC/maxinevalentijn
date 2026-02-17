@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine - Deluxe Adventure</title>
+    <title>The Road to Maxine - Pipe Adventure</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
@@ -14,7 +14,7 @@
 <body>
     <div class="vignette"></div>
     <div id="stats">❤️❤️❤️</div>
-    <div id="ui">LEVEL 1: HET LEVENDIGE BOS</div>
+    <div id="ui">LEVEL 1: DE BOSSEN VAN ARTHUR</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -33,9 +33,6 @@ let lives = 3;
 let shakeTime = 0;
 let timeScale = 1;
 
-let speechBubble = { text: "", timer: 0 };
-function showSpeech(txt) { speechBubble.text = txt; speechBubble.timer = 150; }
-
 const player = {
     x: 100, y: 100, width: 80, height: 110,
     dy: 0, jumpForce: -17, grounded: false, speed: 8,
@@ -44,55 +41,69 @@ const player = {
 
 let projectiles = [];
 let particles = [];
-let hazards = [];
 let movingPlatforms = [];
-let clouds = [];
-let trees = [];
-let buildings = [];
+let decoration = [];
 
-function initDecor() {
-    clouds = []; trees = []; buildings = [];
-    for(let i=0; i<40; i++) clouds.push({ x: Math.random()*12000, y: Math.random()*300, s: 0.5+Math.random(), vx: 0.2+Math.random()*0.5 });
-    for(let i=0; i<60; i++) trees.push({ x: i*300 + Math.random()*200, s: 0.8+Math.random()*0.7 });
-    for(let i=0; i<30; i++) buildings.push({ x: i*600 + Math.random()*300, w: 200+Math.random()*200, h: 300+Math.random()*400 });
+function initDecor(lvl) {
+    decoration = [];
+    for(let i=0; i<50; i++) {
+        decoration.push({
+            x: Math.random() * 10000,
+            y: Math.random() * 400,
+            s: 0.5 + Math.random(),
+            type: lvl === 1 ? 'tree' : 'cloud'
+        });
+    }
 }
 
 function getLevel(lvl) {
-    hazards = []; movingPlatforms = []; lives = 3;
-    initDecor();
+    movingPlatforms = [];
+    initDecor(lvl);
     document.getElementById('stats').innerText = "❤️".repeat(lives);
 
     if(lvl === 1) {
         return {
-            name: "LEVEL 1: DE DIEPE BOSSEN VAN ARTHUR",
-            finish: 9000, // Veel langer
+            name: "LEVEL 1: DE BOSSEN VAN ARTHUR",
+            pipeX: 8500, // De buis staat aan het einde
             color: "#1e3c72",
-            enemies: [{x: 8200, y: canvas.height-350, w: 220, h: 260, name: "ARTHUR", color: "#3d2b1f", hp: 10, speedX: 3, defeated: false}],
+            enemies: [{x: 4500, y: canvas.height-350, w: 200, h: 250, name: "ARTHUR", color: "#3d2b1f", hp: 8, speedX: 3, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1500, h: 100},
-                {x: 1700, y: canvas.height-250, w: 600, h: 250}, // Muur/Obstakel
-                {x: 2300, y: canvas.height-100, w: 1200, h: 100},
-                {x: 3600, y: canvas.height-300, w: 400, h: 40}, // Zwevend
-                {x: 4200, y: canvas.height-450, w: 400, h: 40}, // Hoger
-                {x: 4800, y: canvas.height-100, w: 4000, h: 100}
+                {x: 1700, y: canvas.height-250, w: 400, h: 40},
+                {x: 2300, y: canvas.height-400, w: 400, h: 40},
+                {x: 2900, y: canvas.height-100, w: 2500, h: 100}, // Monster arena
+                // Obstakels NA het monster:
+                {x: 5600, y: canvas.height-250, w: 300, h: 250}, 
+                {x: 6200, y: canvas.height-400, w: 300, h: 40},
+                {x: 6800, y: canvas.height-250, w: 300, h: 250},
+                {x: 7500, y: canvas.height-100, w: 1500, h: 100} // Eindstation
             ]
         };
     } else if(lvl === 2) {
-        movingPlatforms.push({x: 1200, y: canvas.height-100, w: 500, h: 100, range: 1800, startX: 1200, speed: 0.0006});
+        movingPlatforms.push({x: 1200, y: canvas.height-100, w: 500, h: 100, range: 1200, startX: 1200, speed: 0.0008});
         return {
             name: "LEVEL 2: DE STALEN STAD VAN FELIX",
-            finish: 10000,
+            pipeX: 9500,
             color: "#2c003e",
-            enemies: [{x: 9000, y: canvas.height-450, w: 300, h: 350, name: "FELIX", color: "#2d3436", hp: 15, speedX: 4, defeated: false}],
+            enemies: [{x: 6000, y: canvas.height-450, w: 300, h: 350, name: "FELIX", color: "#2d3436", hp: 12, speedX: 4, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1200, h: 100},
-                {x: 3500, y: canvas.height-200, w: 800, h: 200},
-                {x: 4500, y: canvas.height-400, w: 600, h: 40},
-                {x: 5500, y: canvas.height-200, w: 4000, h: 200}
+                {x: 3500, y: canvas.height-200, w: 3000, h: 200}, // Monster arena
+                // Obstakels NA het monster:
+                {x: 6800, y: canvas.height-400, w: 400, h: 40},
+                {x: 7500, y: canvas.height-550, w: 400, h: 40},
+                {x: 8200, y: canvas.height-300, w: 400, h: 300},
+                {x: 9000, y: canvas.height-100, w: 1000, h: 100}
             ]
         };
     } else {
-        return { name: "LEVEL 3: HET LIEFDESKASTEEL", finish: 3500, color: "#ff75a0", enemies: [], platforms: [{x: 0, y: canvas.height-100, w: 5000, h: 100}] };
+        return { 
+            name: "LEVEL 3: HET LIEFDESKASTEEL", 
+            pipeX: 99999, // Geen buis in laatste level
+            color: "#ff75a0", 
+            enemies: [], 
+            platforms: [{x: 0, y: canvas.height-100, w: 5000, h: 100}] 
+        };
     }
 }
 
@@ -101,13 +112,6 @@ const keys = {};
 
 window.addEventListener('keydown', e => { keys[e.code] = true; if(e.code === 'Space') projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 22 }); });
 window.addEventListener('keyup', e => keys[e.code] = false);
-
-function drawDragon(ctx, camX) {
-    const x = 4000 - camX * 0.4;
-    const y = 150 + Math.sin(Date.now()/500) * 30;
-    ctx.fillStyle = "red"; ctx.fillRect(x, y, 100, 40); // Simpele draak representatie
-    ctx.fillStyle = "orange"; ctx.beginPath(); ctx.moveTo(x+100, y+10); ctx.lineTo(x+150, y+20); ctx.lineTo(x+100, y+30); ctx.fill();
-}
 
 function update() {
     if(winState) { 
@@ -138,6 +142,18 @@ function update() {
         }
     });
 
+    // Check voor Buis / Level switch
+    if(player.x > levelData.pipeX - 50 && player.x < levelData.pipeX + 50 && player.grounded) {
+        if(currentLevel < 3) {
+            currentLevel++; levelData = getLevel(currentLevel);
+            player.x = 100; player.y = 100;
+            document.getElementById('ui').innerText = levelData.name;
+        }
+    }
+
+    // Win condition level 3
+    if(currentLevel === 3 && player.x > 2500) winState = true;
+
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             en.x += en.speedX * timeScale;
@@ -155,11 +171,6 @@ function update() {
         });
     });
 
-    if(player.x > levelData.finish) {
-        if(currentLevel < 3) { currentLevel++; levelData = getLevel(currentLevel); player.x = 100; document.getElementById('ui').innerText = levelData.name; }
-        else winState = true;
-    }
-
     draw(); requestAnimationFrame(update);
 }
 
@@ -172,48 +183,43 @@ function draw() {
     if (shakeTime > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shakeTime--; }
 
     // PARALLAX ACHTERGROND
-    if(currentLevel === 1) {
-        trees.forEach(t => {
-            ctx.fillStyle = "#1b4d3e";
-            let tx = (t.x - camX * 0.4);
-            ctx.beginPath(); ctx.moveTo(tx, canvas.height); ctx.lineTo(tx+50*t.s, canvas.height-200*t.s); ctx.lineTo(tx+100*t.s, canvas.height); ctx.fill();
-        });
-    } else if(currentLevel === 2) {
-        buildings.forEach(b => {
-            ctx.fillStyle = "#1a1a1a";
-            ctx.fillRect(b.x - camX*0.2, canvas.height-b.h, b.w, b.h);
-            ctx.fillStyle = "#f1c40f"; // Lichtjes in gebouwen
-            if(b.h > 400) ctx.fillRect(b.x - camX*0.2 + 20, canvas.height-b.h + 50, 10, 10);
-        });
-    }
-
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
-    clouds.forEach(c => { ctx.beginPath(); ctx.arc((c.x - camX*0.2) % 12000, c.y, 40*c.s, 0, Math.PI*2); ctx.fill(); });
+    decoration.forEach(d => {
+        ctx.fillStyle = "rgba(255,255,255,0.1)";
+        let dx = (d.x - camX * 0.3) % 10000;
+        if(d.type === 'tree') {
+            ctx.beginPath(); ctx.moveTo(dx, canvas.height); ctx.lineTo(dx+40, canvas.height-150*d.s); ctx.lineTo(dx+80, canvas.height); ctx.fill();
+        } else {
+            ctx.beginPath(); ctx.arc(dx, d.y, 30*d.s, 0, Math.PI*2); ctx.fill();
+        }
+    });
 
     ctx.save();
     ctx.translate(-camX, 0);
 
-    drawDragon(ctx, camX);
-
     // PLATFORMS
     levelData.platforms.concat(movingPlatforms).forEach(p => {
-        ctx.fillStyle = "#2d3436"; ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 10); ctx.fill();
-        ctx.fillStyle = (currentLevel === 3) ? "#ff9eb5" : "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 10);
+        ctx.fillStyle = "#1a1a1a"; ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 10); ctx.fill();
+        ctx.fillStyle = (currentLevel === 3) ? "#ff9eb5" : "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 8);
     });
+
+    // DE BUIS
+    if(currentLevel < 3) {
+        ctx.fillStyle = "#27ae60"; ctx.fillRect(levelData.pipeX, canvas.height-220, 100, 120); // Schacht
+        ctx.fillStyle = "#2ecc71"; ctx.fillRect(levelData.pipeX-10, canvas.height-250, 120, 40); // Kop
+        ctx.fillStyle = "white"; ctx.font = "bold 16px sans-serif"; ctx.fillText("NEXT LEVEL", levelData.pipeX, canvas.height-260);
+    }
 
     // MONSTERS
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             ctx.fillStyle = en.color; ctx.fillRect(en.x, en.y, en.w, en.h);
-            ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-30, (en.hp/10)*en.w, 10);
+            ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-30, (en.hp/8)*en.w, 10);
         }
     });
 
-    // PLAYER
+    // PLAYER & MAXINE
     ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
-    
-    // MAXINE
-    if(currentLevel === 3) ctx.drawImage(spriteSheet, 650, 250, 300, 600, 3000, canvas.height-380, 180, 280);
+    if(currentLevel === 3) ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2800, canvas.height-380, 180, 280);
 
     ctx.fillStyle = "yellow"; projectiles.forEach(p => ctx.fillRect(p.x, p.y, 40, 12));
 
