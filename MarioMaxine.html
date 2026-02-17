@@ -11,13 +11,24 @@
             justify-content: space-around; color: white; font-size: 28px; 
             font-weight: bold; text-shadow: 3px 3px #000; pointer-events: none; z-index: 10;
         }
-        .controls-hint {
-            position: fixed; bottom: 20px; width: 100%; text-align: center;
-            color: white; font-size: 18px; text-shadow: 1px 1px #000;
+        /* Home knop linksboven */
+        .home-btn {
+            position: fixed; top: 20px; left: 20px; z-index: 100;
+            background: #ff4d6d; color: white; padding: 10px 20px;
+            border-radius: 20px; text-decoration: none; font-weight: bold;
+            border: 2px solid white; box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+        }
+        /* Win-scherm knoppen */
+        .win-btn {
+            background: #2b9348; color: white; padding: 15px 30px;
+            border-radius: 30px; text-decoration: none; font-size: 24px;
+            display: inline-block; margin-top: 20px; border: 3px solid white;
         }
     </style>
 </head>
 <body>
+
+    <a href="index.html" class="home-btn">🏠 Home</a>
 
     <div id="ui">
         <div>ANTOINE<br><span id="scoreDisplay">000000</span></div>
@@ -25,7 +36,6 @@
         <div>WORLD<br>1-1</div>
     </div>
 
-    <div class="controls-hint">Pijltjes om te lopen/springen • Spatie om te schieten</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -34,7 +44,6 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// Sprites laden
 const spriteSheet = new Image();
 spriteSheet.src = 'sprites.png'; 
 spriteSheet.onload = () => { initLevel(); update(); };
@@ -53,34 +62,28 @@ const player = {
 let platforms = [];
 let coins = [];
 let qBlocks = [];
-let projectiles = [];
 
 function initLevel() {
-    // De Mario-wereld opbouw
     platforms = [
-        {x: 0, y: canvas.height-100, w: 1400, h: 100},   // Start
-        {x: 1700, y: canvas.height-100, w: 1200, h: 100}, // Na eerste gat
-        {x: 3200, y: canvas.height-100, w: 2000, h: 100}, // Derde deel
-        {x: 5500, y: canvas.height-100, w: 1000, h: 100}, // Vierde deel
-        // De Trap naar Maxine
-        {x: 6700, y: canvas.height-200, w: 80, h: 200},
-        {x: 6780, y: canvas.height-300, w: 80, h: 300},
-        {x: 6860, y: canvas.height-400, w: 80, h: 400},
-        {x: 6940, y: canvas.height-500, w: 1000, h: 500}  // De Toren bovenop
+        {x: 0, y: canvas.height-100, w: 1400, h: 100},
+        {x: 1700, y: canvas.height-100, w: 1200, h: 100},
+        {x: 3200, y: canvas.height-100, w: 2000, h: 100},
+        {x: 5500, y: canvas.height-100, w: 1000, h: 100},
+        // De Trap naar Maxine (Iets lager gemaakt voor beter zicht)
+        {x: 6700, y: canvas.height-180, w: 80, h: 180},
+        {x: 6780, y: canvas.height-260, w: 80, h: 260},
+        {x: 6860, y: canvas.height-340, w: 80, h: 340},
+        {x: 6940, y: canvas.height-420, w: 1200, h: 420} // Eindplateau lager
     ];
 
-    // Vraagtekenblokken (zwevend)
     qBlocks = [
         {x: 500, y: canvas.height-400, hit: false},
-        {x: 555, y: canvas.height-400, hit: false},
         {x: 2200, y: canvas.height-350, hit: false},
-        {x: 3800, y: canvas.height-400, hit: false},
-        {x: 3855, y: canvas.height-400, hit: false}
+        {x: 3800, y: canvas.height-400, hit: false}
     ];
 
-    // Muntjes
-    for(let i=0; i<20; i++) {
-        coins.push({x: 1000 + (i*350), y: canvas.height-250, collected: false});
+    for(let i=0; i<15; i++) {
+        coins.push({x: 1000 + (i*400), y: canvas.height-250, collected: false});
     }
 }
 
@@ -92,16 +95,12 @@ window.addEventListener('keydown', e => {
         player.jumpsLeft--;
         player.grounded = false;
     }
-    if(e.code === 'Space') {
-        projectiles.push({x: player.x + 50, y: player.y + 30, vx: 15});
-    }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
 function update() {
     if(winState) { draw(); return; }
 
-    // Beweging
     if(keys['ArrowRight']) { player.x += player.speed; player.frameX = (Math.floor(Date.now()/100)%3); }
     else if(keys['ArrowLeft']) { player.x -= player.speed; player.frameX = (Math.floor(Date.now()/100)%3); }
     else { player.frameX = 0; }
@@ -109,7 +108,6 @@ function update() {
     player.dy += gravity;
     player.y += player.dy;
 
-    // Platform Collision
     player.grounded = false;
     platforms.forEach(p => {
         if(player.x < p.x+p.w && player.x+player.width > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
@@ -117,40 +115,30 @@ function update() {
         }
     });
 
-    // Vraagtekenblokken check (hoofd stoten)
     qBlocks.forEach(b => {
         if(!b.hit && player.x < b.x+50 && player.x+player.width > b.x && player.y < b.y+50 && player.y > b.y && player.dy < 0) {
             b.hit = true; score += 200; coinsCollected++; player.dy = 2;
-            updateUI();
+            document.getElementById('scoreDisplay').innerText = score.toString().padStart(6, '0');
+            document.getElementById('coinDisplay').innerText = coinsCollected;
         }
     });
 
-    // Muntjes check
     coins.forEach(c => {
         if(!c.collected && Math.abs(player.x - c.x) < 40 && Math.abs(player.y - c.y) < 60) {
             c.collected = true; score += 100; coinsCollected++;
-            updateUI();
+            document.getElementById('coinDisplay').innerText = coinsCollected;
         }
     });
 
-    // Kogel beweging
-    projectiles.forEach((p, i) => { p.x += p.vx; if(p.x > player.x + 1000) projectiles.splice(i, 1); });
-
-    // Dood door vallen
     if(player.y > canvas.height) { player.x = 100; player.y = 100; player.dy = 0; }
 
-    // Win conditie: Bovenop de toren bij Maxine
-    if(player.x > 7000 && player.y < canvas.height - 500) {
+    // Win conditie: Maxine staat nu op x=7300
+    if(player.x > 7100 && player.y < canvas.height - 400) {
         winState = true;
     }
 
     draw();
     requestAnimationFrame(update);
-}
-
-function updateUI() {
-    document.getElementById('scoreDisplay').innerText = score.toString().padStart(6, '0');
-    document.getElementById('coinDisplay').innerText = coinsCollected;
 }
 
 function draw() {
@@ -160,58 +148,56 @@ function draw() {
     ctx.save();
     ctx.translate(-camX, 0);
 
-    // Teken Platforms (Mario Baksteen Look)
+    // Grond
     platforms.forEach(p => {
-        ctx.fillStyle = "#C84C0C"; // Donker oranje/bruin
-        ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.strokeStyle = "black"; ctx.lineWidth = 3;
-        ctx.strokeRect(p.x, p.y, p.w, p.h);
-        // Baksteen lijntjes
-        ctx.strokeStyle = "rgba(0,0,0,0.3)";
-        for(let i = 0; i < p.w; i+=40) ctx.strokeRect(p.x+i, p.y, 40, 40);
+        ctx.fillStyle = "#C84C0C"; ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.strokeStyle = "black"; ctx.lineWidth = 3; ctx.strokeRect(p.x, p.y, p.w, p.h);
     });
 
-    // Teken Vraagtekenblokken
+    // Blokken & Munten
     qBlocks.forEach(b => {
         ctx.fillStyle = b.hit ? "#949494" : "#F8D824";
         ctx.fillRect(b.x, b.y, 50, 50);
-        ctx.strokeStyle = "black"; ctx.strokeRect(b.x, b.y, 50, 50);
-        if(!b.hit) {
-            ctx.fillStyle = "black"; ctx.font = "bold 30px Arial"; ctx.fillText("?", b.x+17, b.y+37);
-        }
+        if(!b.hit) { ctx.fillStyle = "black"; ctx.font = "bold 30px Arial"; ctx.fillText("?", b.x+17, b.y+37); }
     });
 
-    // Teken Muntjes
     ctx.fillStyle = "#F8D824";
-    coins.forEach(c => {
-        if(!c.collected) {
-            ctx.beginPath(); ctx.ellipse(c.x, c.y, 10, 16, 0, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = "black"; ctx.lineWidth = 1; ctx.stroke();
-        }
-    });
+    coins.forEach(c => { if(!c.collected) { ctx.beginPath(); ctx.ellipse(c.x, c.y, 10, 16, 0, 0, Math.PI*2); ctx.fill(); }});
 
-    // Teken Kogels
-    ctx.fillStyle = "white";
-    projectiles.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, Math.PI*2); ctx.fill(); });
+    // MAXINE (Nu lager gepositioneerd zodat ze helemaal zichtbaar is)
+    // De y-waarde is aangepast naar canvas.height - 700 (stond eerst veel hoger)
+    ctx.drawImage(spriteSheet, 650, 250, 300, 600, 7400, canvas.height-705, 180, 285);
 
-    // MAXINE (Op de toren)
-    ctx.drawImage(spriteSheet, 650, 250, 300, 600, 7400, canvas.height-785, 180, 285);
-
-    // ANTOINE (De Speler)
-    // We gebruiken frameX om hem te laten lopen
+    // ANTOINE
     ctx.drawImage(spriteSheet, player.frameX*210, 150, 200, 300, player.x, player.y, player.width, player.height);
 
     ctx.restore();
 
     if(winState) {
-        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillStyle = "rgba(0,0,0,0.85)";
         ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle = "white";
         ctx.textAlign = "center";
-        ctx.font = "bold 60px Arial";
-        ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2);
+        ctx.font = "bold 50px Arial";
+        ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2 - 50);
+        
+        // Knop in het win-scherm om terug te gaan
         ctx.font = "30px Arial";
-        ctx.fillText("Je bent de held van de dag!", canvas.width/2, canvas.height/2 + 70);
+        ctx.fillText("Je bent de held van Antoine!", canvas.width/2, canvas.height/2 + 20);
+        
+        // We voegen een echte HTML link toe over het canvas heen voor de klikbaarheid
+        if(!document.getElementById('winLink')) {
+            let btn = document.createElement('a');
+            btn.id = 'winLink';
+            btn.href = 'index.html'; // Zorg dat dit naar je hoofdpagina linkt
+            btn.className = 'win-btn';
+            btn.innerHTML = 'Terug naar het menu';
+            btn.style.position = 'fixed';
+            btn.style.top = '65%';
+            btn.style.left = '50%';
+            btn.style.transform = 'translate(-50%, -50%)';
+            document.body.appendChild(btn);
+        }
     }
 }
 </script>
