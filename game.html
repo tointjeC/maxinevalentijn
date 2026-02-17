@@ -20,6 +20,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// LAAD DE AFBEELDING
 const spriteSheet = new Image();
 spriteSheet.src = 'sprites.png'; 
 
@@ -31,7 +32,7 @@ let winState = false;
 const player = {
     x: 100, y: 100, width: 90, height: 120,
     dy: 0, jumpForce: -17, grounded: false, speed: 7,
-    frameX: 0, lastDirection: 'right', onLadder: false
+    frameX: 0, lastDirection: 'right'
 };
 
 let projectiles = [];
@@ -39,7 +40,7 @@ let projectiles = [];
 function getLevel(lvl) {
     if(lvl === 1) {
         return {
-            name: "LEVEL 1: ARTHUR HET TENTAKELMONSTER",
+            name: "LEVEL 1: ARTHUR het cheating monster",
             finish: 3500,
             enemies: [{x: 1800, y: canvas.height-250, w: 180, h: 180, name: "ARTHUR", color: "#2dcfb3", hp: 6, speedX: 3}],
             platforms: [
@@ -50,30 +51,30 @@ function getLevel(lvl) {
         };
     } else if(lvl === 2) {
         return {
-            name: "LEVEL 2: DE KLIM NAAR REUS FELIX",
+            name: "LEVEL 2: DE TOCHT NAAR REUS FELIX",
             finish: 4500,
             enemies: [{x: 2800, y: canvas.height-250, w: 200, h: 200, name: "FELIX", color: "#6c5ce7", hp: 10, speedX: 5}],
             platforms: [
-                {x: 0, y: canvas.height-100, w: 1000, h: 100},
-                {x: 1000, y: canvas.height-400, w: 500, h: 30}, 
-                {x: 1500, y: canvas.height-100, w: 3500, h: 100}
+                {x: 0, y: canvas.height-100, w: 1000, h: 100}, // Eerste platform
+                {x: 1000, y: canvas.height-400, w: 600, h: 30},  // Hoog platform
+                {x: 1600, y: canvas.height-100, w: 3500, h: 100} // Eind platform
             ],
             ladders: [
-                {x: 1050, y: canvas.height-400, w: 80, h: 300} 
+                {x: 850, y: canvas.height-400, w: 100, h: 320} // Ladder staat nu op het land!
             ]
         };
     } else {
         return {
-            name: "LEVEL 3: DE FINALE REDDING",
+            name: "LEVEL 3: Red de liefde van je leven",
             finish: 5000,
             enemies: [],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 500, h: 100},
                 {x: 600, y: canvas.height-300, w: 200, h: 30},
-                {x: 1000, y: canvas.height-500, w: 200, h: 30},
+                {x: 1000, y: canvas.height-500, w: 300, h: 30},
                 {x: 1500, y: canvas.height-100, w: 4000, h: 100}
             ],
-            ladders: [{x: 1060, y: canvas.height-500, w: 80, h: 400}]
+            ladders: [{x: 1050, y: canvas.height-500, w: 100, h: 420}]
         };
     }
 }
@@ -95,34 +96,26 @@ function shoot() {
     });
 }
 
-// Functie om de monster-look te tekenen
 function drawScaryMonster(en) {
     const shake = Math.sin(Date.now()/50)*5;
     ctx.save();
     ctx.translate(en.x + shake, en.y + shake);
-
-    // Lichaam (Blob vorm)
     ctx.fillStyle = en.color;
     ctx.beginPath();
     ctx.moveTo(0, en.h);
     ctx.quadraticCurveTo(en.w/2, -20, en.w, en.h);
     ctx.fill();
-
-    // Enge ogen (rood gloeiend)
     ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.arc(en.w*0.3, en.h*0.4, 25, 0, Math.PI*2);
     ctx.arc(en.w*0.7, en.h*0.4, 25, 0, Math.PI*2);
     ctx.fill();
-    
     ctx.fillStyle = "red";
     const eyePulse = Math.abs(Math.sin(Date.now()/200)*10);
     ctx.beginPath();
     ctx.arc(en.w*0.3, en.h*0.4, 10 + eyePulse/2, 0, Math.PI*2);
     ctx.arc(en.w*0.7, en.h*0.4, 10 + eyePulse/2, 0, Math.PI*2);
     ctx.fill();
-
-    // Tentakels/Pootjes onderaan
     ctx.strokeStyle = en.color;
     ctx.lineWidth = 10;
     for(let i=0; i<5; i++) {
@@ -131,36 +124,31 @@ function drawScaryMonster(en) {
         ctx.lineTo(en.w * (i/4) + Math.sin(Date.now()/150 + i)*20, en.h + 30);
         ctx.stroke();
     }
-    
-    // Naam & HP
     ctx.fillStyle = "white";
     ctx.font = "bold 20px Arial";
     ctx.textAlign = "center";
     ctx.fillText(en.name, en.w/2, -40);
     ctx.fillStyle = "red";
     ctx.fillRect(0, -30, (en.hp * (en.w/10)), 15);
-    
     ctx.restore();
 }
 
 function update() {
     if(!gameActive) return;
 
-    // Horizontaal bewegen
     if(keys['ArrowRight']) { player.x += player.speed; player.lastDirection = 'right'; player.frameX = (Math.floor(Date.now()/150)%3); }
     else if(keys['ArrowLeft']) { player.x -= player.speed; player.lastDirection = 'left'; player.frameX = (Math.floor(Date.now()/150)%3); }
     else player.frameX = 0;
 
-    // Ladder check
     let touchingLadder = false;
     levelData.ladders.forEach(l => {
-        if(player.x + 50 > l.x && player.x + 40 < l.x + l.w && player.y + player.height > l.y && player.y < l.y + l.h) {
+        if(player.x + 60 > l.x && player.x + 30 < l.x + l.w && player.y + player.height > l.y && player.y < l.y + l.h) {
             touchingLadder = true;
         }
     });
 
     if(touchingLadder) {
-        player.dy = 0; // Geen zwaartekracht op ladder
+        player.dy = 0;
         if(keys['ArrowUp']) player.y -= 6;
         if(keys['ArrowDown']) player.y += 6;
     } else {
@@ -168,13 +156,11 @@ function update() {
         player.y += player.dy;
     }
 
-    // Springen (alleen op de grond)
     if(keys['ArrowUp'] && player.grounded && !touchingLadder) { 
         player.dy = player.jumpForce; 
         player.grounded = false; 
     }
 
-    // Platform collision
     player.grounded = false;
     levelData.platforms.forEach(p => {
         if(player.x+30 < p.x+p.w && player.x+60 > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
@@ -184,14 +170,12 @@ function update() {
         }
     });
 
-    // Vijanden bewegen en raken
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             en.x += en.speedX;
             if(en.x > levelData.finish - 400 || en.x < 1500) en.speedX *= -1;
-            
             if(player.x < en.x+en.w - 30 && player.x+player.width > en.x + 30 && player.y < en.y+en.h && player.y+player.height > en.y) {
-                player.x = 100; player.y = 100; // Dood
+                player.x = 100; player.y = 100;
             }
         }
     });
@@ -230,36 +214,26 @@ function draw() {
     ctx.save();
     ctx.translate(-camX, 0);
 
-    // Ladders (Trappen)
     levelData.ladders.forEach(l => {
         ctx.fillStyle = "#5e371a";
         ctx.fillRect(l.x, l.y, 10, l.h);
         ctx.fillRect(l.x + l.w - 10, l.y, 10, l.h);
-        for(let i=10; i<l.h; i+=25) {
-            ctx.fillRect(l.x, l.y + i, l.w, 6);
-        }
+        for(let i=10; i<l.h; i+=25) { ctx.fillRect(l.x, l.y + i, l.w, 6); }
     });
 
-    // Platforms
     levelData.platforms.forEach(p => {
         ctx.fillStyle = "#1e272e"; ctx.fillRect(p.x, p.y, p.w, p.h);
         ctx.fillStyle = "#34495e"; ctx.fillRect(p.x, p.y, p.w, 10);
     });
 
-    // Monsters tekenen
-    levelData.enemies.forEach(en => {
-        if(!en.defeated) drawScaryMonster(en);
-    });
+    levelData.enemies.forEach(en => { if(!en.defeated) drawScaryMonster(en); });
 
-    // Antoine
     ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
 
-    // Maxine
     if(currentLevel === 3) {
         ctx.drawImage(spriteSheet, 650, 250, 300, 600, 4800, canvas.height-380, 180, 280);
     }
 
-    // Kogels
     ctx.fillStyle = "#00d2ff";
     projectiles.forEach(p => {
         ctx.shadowBlur = 10; ctx.shadowColor = "cyan";
@@ -277,7 +251,6 @@ function draw() {
         ctx.fillText("GEWONNEN! JIJ BENT DE ENIGE VOOR MAXINE! ❤️", canvas.width/2, canvas.height/2);
     }
 }
-
 update();
 </script>
 </body>
