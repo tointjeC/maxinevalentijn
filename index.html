@@ -8,7 +8,7 @@
         /* Navigatie Menu linksboven */
         .nav-menu {
             position: fixed;
-            top: 20px; /* Verplaatst van bottom naar top */
+            top: 20px;
             left: 20px;
             display: flex;
             flex-direction: column;
@@ -28,7 +28,8 @@
             border: 2px solid white;
             text-align: center;
             transition: transform 0.2s, background-color 0.2s;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            min-width: 180px;
         }
 
         .nav-menu a:hover {
@@ -46,71 +47,70 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            text-align: center;
         }
 
         /* De witte kaart */
         .card {
             background: rgba(255, 255, 255, 0.95);
-            padding: 40px;
+            padding: 30px;
             border-radius: 30px;
             box-shadow: 0 15px 35px rgba(255, 77, 109, 0.2);
             max-width: 400px;
             width: 85%;
             z-index: 10;
-            position: relative;
+            text-align: center;
         }
 
-        h1 { color: #c9184a; font-size: 2rem; margin-bottom: 10px; }
-        p { color: #ff4d6d; font-size: 1.1rem; line-height: 1.6; }
+        /* HET MARIO POPPETJE OP DE KAART */
+        .mario-sprite {
+            width: 80px;
+            height: 100px;
+            margin: 0 auto 10px auto;
+            background-image: url('sprites.png');
+            background-position: 0px -150px; /* Dit pakt Antoine/Mario */
+            background-size: 800px;
+            background-repeat: no-repeat;
+            animation: jump 1.2s infinite ease-in-out;
+        }
 
-        /* Knoppen Sectie */
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        h1 { color: #c9184a; font-size: 1.8rem; margin-bottom: 10px; }
+        p { color: #ff4d6d; font-size: 1rem; line-height: 1.5; }
+
         .btn-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 30px;
-            min-height: 150px;
+            margin-top: 20px;
+            min-height: 120px;
         }
 
         .btn-row {
             display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
 
         button {
-            padding: 15px 30px;
+            padding: 12px 25px;
             border-radius: 50px;
             border: none;
             font-weight: bold;
             cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.2s ease-in-out;
+            transition: all 0.2s;
         }
 
-        #yesBtn {
-            background-color: #2b9348;
-            color: white;
-            box-shadow: 0 4px 15px rgba(43, 147, 72, 0.3);
-        }
-
-        #noBtn {
-            background-color: #d90429;
-            color: white;
-            box-shadow: 0 4px 15px rgba(217, 4, 41, 0.3);
-        }
+        #yesBtn { background-color: #2b9348; color: white; }
+        #noBtn { background-color: #d90429; color: white; }
 
         /* Hartjes Animatie */
         .heart {
             position: fixed;
             top: -10%;
             font-size: 24px;
-            user-select: none;
-            pointer-events: none;
             z-index: 1;
             animation: fall linear forwards;
         }
@@ -120,33 +120,23 @@
         }
 
         .hidden { display: none; }
-
-        .heartbeat {
-            animation: hb 1.2s infinite;
-            font-size: 3rem;
-            display: block;
-            margin-bottom: 10px;
-        }
-        @keyframes hb {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
     </style>
 </head>
 <body>
 
     <div class="nav-menu">
+        <a href="MarioMaxine.html">⭐️ Super Mario Maxine</a>
         <a href="game.html">🎮 The Road to Maxine</a>
         <a href="woordzoeker.html">🔍 Woordzoeker</a>
         <a href="galgje.html">🆘 Red Antoine</a>
-	<a href="MarioMaxine.html">Training</a>
     </div>
 
     <div class="card">
+        <div class="mario-sprite"></div>
+
         <div id="askSection">
             <h1>Lieve Maxine, ❤️</h1>
-            <p>Sinds we samen zijn, is alles leuker. Ik heb een hele belangrijke vraag voor je...</p>
+            <p>Ik heb een hele belangrijke vraag voor je...</p>
             <p><strong>Wil jij mijn Valentijn zijn?</strong></p>
             
             <div class="btn-container">
@@ -158,33 +148,23 @@
         </div>
 
         <div id="successSection" class="hidden">
-            <span class="heartbeat">🌹</span>
+            <h1 style="font-size: 3rem;">🌹</h1>
             <h1>GEWELDIG!</h1>
-            <p>Ik heb een verrassing voor je klaargezet...</p>
-            <p>Momentje geduld... ❤️</p>
+            <p>Je verrassing komt eraan... ❤️</p>
         </div>
     </div>
 
     <script>
         let clickCount = 0;
-        const noTexts = [
-            "Ben je zeker?", 
-            "Echt heel zeker?", 
-            "Zeg toch maar ja...", 
-            "Maxine, je maakt een foutje! 😂", 
-            "Nu is het genoeg hoor!", 
-            "Klik nu op JA"
-        ];
+        const noTexts = ["Echt?", "Zeker?", "Komaan..", "Nog eens?", "Bijna!", "Klik JA"];
 
         function makeYesBigger() {
             const noBtn = document.getElementById('noBtn');
             const yesBtn = document.getElementById('yesBtn');
-            
             if (clickCount < noTexts.length) {
                 noBtn.innerHTML = noTexts[clickCount];
                 let currentSize = parseFloat(window.getComputedStyle(yesBtn).fontSize);
                 yesBtn.style.fontSize = (currentSize + 12) + "px";
-                yesBtn.style.padding = (currentSize + 5) + "px " + (currentSize + 25) + "px";
                 clickCount++;
             } else {
                 noBtn.style.display = 'none';
@@ -194,7 +174,6 @@
         function goToVideo() {
             document.getElementById('askSection').classList.add('hidden');
             document.getElementById('successSection').classList.remove('hidden');
-            document.body.style.backgroundColor = "#ffb3c1";
             setTimeout(function() {
                 window.location.href = "video.html";
             }, 3000);
@@ -206,7 +185,6 @@
             heart.innerHTML = '❤️';
             heart.style.left = Math.random() * 100 + 'vw';
             heart.style.animationDuration = (Math.random() * 2 + 3) + 's';
-            heart.style.opacity = Math.random();
             document.body.appendChild(heart);
             setTimeout(() => { heart.remove(); }, 5000);
         }

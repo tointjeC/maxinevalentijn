@@ -1,39 +1,31 @@
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>Super Antoine Bros</title>
+    <title>Super Mario Maxine - World 1-1</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #5C94FC; font-family: 'Courier New', Courier, monospace; }
+        body { margin: 0; overflow: hidden; background-color: #5C94FC; font-family: 'Arial', sans-serif; }
         canvas { display: block; }
-        #overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.7); display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; z-index: 20; 
+        #ui { 
+            position: fixed; top: 10px; width: 100%; display: flex; 
+            justify-content: space-around; color: white; font-size: 28px; 
+            font-weight: bold; text-shadow: 3px 3px #000; pointer-events: none; z-index: 10;
         }
-        button { 
-            padding: 20px 40px; font-size: 30px; cursor: pointer; 
-            background: #ff4d6d; color: white; border: none; border-radius: 10px;
-            box-shadow: 0 5px #a02040; transition: 0.1s;
+        .controls-hint {
+            position: fixed; bottom: 20px; width: 100%; text-align: center;
+            color: white; font-size: 18px; text-shadow: 1px 1px #000;
         }
-        button:active { transform: translateY(4px); box-shadow: 0 1px #a02040; }
-        #ui { position: fixed; top: 20px; width: 100%; display: flex; justify-content: space-around; color: white; font-size: 24px; text-shadow: 3px 3px #000; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <h1 style="color: white; font-size: 50px; margin-bottom: 30px;">SUPER ANTOINE BROS</h1>
-        <button onclick="startGame()">START AVONTUUR</button>
-    </div>
-
     <div id="ui">
-        <div>ANTOINE<br><span id="score">000000</span></div>
-        <div>LIVES<br>❤️ x <span id="lives">3</span></div>
+        <div>ANTOINE<br><span id="scoreDisplay">000000</span></div>
+        <div>MUNTEN<br>🪙 x <span id="coinDisplay">0</span></div>
         <div>WORLD<br>1-1</div>
     </div>
 
+    <div class="controls-hint">Pijltjes om te lopen/springen • Spatie om te schieten</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -42,58 +34,54 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// Sprites laden
 const spriteSheet = new Image();
 spriteSheet.src = 'sprites.png'; 
+spriteSheet.onload = () => { initLevel(); update(); };
 
-let gameRunning = false;
 let score = 0;
-let lives = 3;
-let winState = false;
+let coinsCollected = 0;
 const gravity = 0.8;
+let winState = false;
 
 const player = {
-    x: 100, y: 100, width: 60, height: 90,
-    dy: 0, jumpForce: -17, grounded: false, speed: 8,
+    x: 100, y: 100, width: 60, height: 85,
+    dy: 0, jumpForce: -18, grounded: false, speed: 8,
     frameX: 0, jumpsLeft: 2
 };
 
 let platforms = [];
 let coins = [];
 let qBlocks = [];
-
-function startGame() {
-    document.getElementById('overlay').style.display = 'none';
-    gameRunning = true;
-    initLevel();
-    update();
-}
+let projectiles = [];
 
 function initLevel() {
-    // De Mario-grond met gaten
+    // De Mario-wereld opbouw
     platforms = [
-        {x: 0, y: canvas.height-100, w: 1200, h: 100},
-        {x: 1500, y: canvas.height-100, w: 1000, h: 100},
-        {x: 2800, y: canvas.height-100, w: 2000, h: 100},
-        {x: 5200, y: canvas.height-100, w: 1000, h: 100},
-        // Trap naar de toren
-        {x: 6300, y: canvas.height-200, w: 100, h: 200},
-        {x: 6400, y: canvas.height-300, w: 100, h: 300},
-        {x: 6500, y: canvas.height-400, w: 100, h: 400},
-        {x: 6600, y: canvas.height-500, w: 800, h: 500} // Eindplateau (Toren)
+        {x: 0, y: canvas.height-100, w: 1400, h: 100},   // Start
+        {x: 1700, y: canvas.height-100, w: 1200, h: 100}, // Na eerste gat
+        {x: 3200, y: canvas.height-100, w: 2000, h: 100}, // Derde deel
+        {x: 5500, y: canvas.height-100, w: 1000, h: 100}, // Vierde deel
+        // De Trap naar Maxine
+        {x: 6700, y: canvas.height-200, w: 80, h: 200},
+        {x: 6780, y: canvas.height-300, w: 80, h: 300},
+        {x: 6860, y: canvas.height-400, w: 80, h: 400},
+        {x: 6940, y: canvas.height-500, w: 1000, h: 500}  // De Toren bovenop
     ];
 
-    // Muntjes in de lucht
-    for(let i=0; i<15; i++) {
-        coins.push({x: 500 + (i*400), y: canvas.height-300, collected: false});
-    }
-
-    // Vraagtekenblokken
+    // Vraagtekenblokken (zwevend)
     qBlocks = [
-        {x: 800, y: canvas.height-350, hit: false},
-        {x: 850, y: canvas.height-350, hit: false},
-        {x: 2000, y: canvas.height-400, hit: false},
-        {x: 3500, y: canvas.height-350, hit: false}
+        {x: 500, y: canvas.height-400, hit: false},
+        {x: 555, y: canvas.height-400, hit: false},
+        {x: 2200, y: canvas.height-350, hit: false},
+        {x: 3800, y: canvas.height-400, hit: false},
+        {x: 3855, y: canvas.height-400, hit: false}
     ];
+
+    // Muntjes
+    for(let i=0; i<20; i++) {
+        coins.push({x: 1000 + (i*350), y: canvas.height-250, collected: false});
+    }
 }
 
 const keys = {};
@@ -104,19 +92,24 @@ window.addEventListener('keydown', e => {
         player.jumpsLeft--;
         player.grounded = false;
     }
+    if(e.code === 'Space') {
+        projectiles.push({x: player.x + 50, y: player.y + 30, vx: 15});
+    }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
 function update() {
-    if(!gameRunning || winState) return;
+    if(winState) { draw(); return; }
 
+    // Beweging
     if(keys['ArrowRight']) { player.x += player.speed; player.frameX = (Math.floor(Date.now()/100)%3); }
-    if(keys['ArrowLeft']) { player.x -= player.speed; player.frameX = (Math.floor(Date.now()/100)%3); }
+    else if(keys['ArrowLeft']) { player.x -= player.speed; player.frameX = (Math.floor(Date.now()/100)%3); }
+    else { player.frameX = 0; }
 
     player.dy += gravity;
     player.y += player.dy;
 
-    // Collision met platforms
+    // Platform Collision
     player.grounded = false;
     platforms.forEach(p => {
         if(player.x < p.x+p.w && player.x+player.width > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
@@ -124,56 +117,58 @@ function update() {
         }
     });
 
-    // Check Vraagtekenblokken (tegenaan springen)
+    // Vraagtekenblokken check (hoofd stoten)
     qBlocks.forEach(b => {
-        if(!b.hit && player.x < b.x+50 && player.x+player.width > b.x && player.y < b.y+50 && player.y > b.y-20 && player.dy < 0) {
-            b.hit = true; score += 200; player.dy = 2;
-            document.getElementById('score').innerText = score.toString().padStart(6, '0');
+        if(!b.hit && player.x < b.x+50 && player.x+player.width > b.x && player.y < b.y+50 && player.y > b.y && player.dy < 0) {
+            b.hit = true; score += 200; coinsCollected++; player.dy = 2;
+            updateUI();
         }
     });
 
-    // Muntjes verzamelen
+    // Muntjes check
     coins.forEach(c => {
         if(!c.collected && Math.abs(player.x - c.x) < 40 && Math.abs(player.y - c.y) < 60) {
-            c.collected = true; score += 100;
-            document.getElementById('score').innerText = score.toString().padStart(6, '0');
+            c.collected = true; score += 100; coinsCollected++;
+            updateUI();
         }
     });
 
-    // Eind-check (Bij Maxine)
-    if(player.x > 6700 && player.y < canvas.height-500) {
-        winState = true;
-    }
+    // Kogel beweging
+    projectiles.forEach((p, i) => { p.x += p.vx; if(p.x > player.x + 1000) projectiles.splice(i, 1); });
 
-    if(player.y > canvas.height) {
-        lives--;
-        document.getElementById('lives').innerText = lives;
-        if(lives <= 0) location.reload();
-        else { player.x = 100; player.y = 100; player.dy = 0; }
+    // Dood door vallen
+    if(player.y > canvas.height) { player.x = 100; player.y = 100; player.dy = 0; }
+
+    // Win conditie: Bovenop de toren bij Maxine
+    if(player.x > 7000 && player.y < canvas.height - 500) {
+        winState = true;
     }
 
     draw();
     requestAnimationFrame(update);
 }
 
+function updateUI() {
+    document.getElementById('scoreDisplay').innerText = score.toString().padStart(6, '0');
+    document.getElementById('coinDisplay').innerText = coinsCollected;
+}
+
 function draw() {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     const camX = player.x - canvas.width/3;
-    ctx.save(); ctx.translate(-camX, 0);
+    
+    ctx.save();
+    ctx.translate(-camX, 0);
 
-    // Teken grond en platforms (Mario-stijl)
+    // Teken Platforms (Mario Baksteen Look)
     platforms.forEach(p => {
-        ctx.fillStyle = "#C84C0C"; ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.strokeStyle = "black"; ctx.lineWidth = 4; ctx.strokeRect(p.x, p.y, p.w, p.h);
-    });
-
-    // Teken Muntjes
-    ctx.fillStyle = "#F8D824";
-    coins.forEach(c => {
-        if(!c.collected) {
-            ctx.beginPath(); ctx.ellipse(c.x, c.y, 12, 18, 0, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = "#000"; ctx.lineWidth = 2; ctx.stroke();
-        }
+        ctx.fillStyle = "#C84C0C"; // Donker oranje/bruin
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.strokeStyle = "black"; ctx.lineWidth = 3;
+        ctx.strokeRect(p.x, p.y, p.w, p.h);
+        // Baksteen lijntjes
+        ctx.strokeStyle = "rgba(0,0,0,0.3)";
+        for(let i = 0; i < p.w; i+=40) ctx.strokeRect(p.x+i, p.y, 40, 40);
     });
 
     // Teken Vraagtekenblokken
@@ -182,23 +177,41 @@ function draw() {
         ctx.fillRect(b.x, b.y, 50, 50);
         ctx.strokeStyle = "black"; ctx.strokeRect(b.x, b.y, 50, 50);
         if(!b.hit) {
-            ctx.fillStyle = "black"; ctx.font = "bold 30px Arial"; ctx.fillText("?", b.x+15, b.y+35);
+            ctx.fillStyle = "black"; ctx.font = "bold 30px Arial"; ctx.fillText("?", b.x+17, b.y+37);
         }
     });
 
-    // MAXINE (Aan het einde op de toren)
-    ctx.drawImage(spriteSheet, 650, 250, 300, 600, 7000, canvas.height-780, 180, 280);
+    // Teken Muntjes
+    ctx.fillStyle = "#F8D824";
+    coins.forEach(c => {
+        if(!c.collected) {
+            ctx.beginPath(); ctx.ellipse(c.x, c.y, 10, 16, 0, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = "black"; ctx.lineWidth = 1; ctx.stroke();
+        }
+    });
 
-    // ANTOINE
+    // Teken Kogels
+    ctx.fillStyle = "white";
+    projectiles.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 10, 0, Math.PI*2); ctx.fill(); });
+
+    // MAXINE (Op de toren)
+    ctx.drawImage(spriteSheet, 650, 250, 300, 600, 7400, canvas.height-785, 180, 285);
+
+    // ANTOINE (De Speler)
+    // We gebruiken frameX om hem te laten lopen
     ctx.drawImage(spriteSheet, player.frameX*210, 150, 200, 300, player.x, player.y, player.width, player.height);
 
     ctx.restore();
 
     if(winState) {
-        ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 50px Arial";
-        ctx.fillText("LEVEL VOLTOOID! ❤️", canvas.width/2, canvas.height/2);
-        ctx.font = "30px Arial"; ctx.fillText("Je hebt Maxine gevonden!", canvas.width/2, canvas.height/2 + 60);
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.font = "bold 60px Arial";
+        ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2);
+        ctx.font = "30px Arial";
+        ctx.fillText("Je bent de held van de dag!", canvas.width/2, canvas.height/2 + 70);
     }
 }
 </script>
