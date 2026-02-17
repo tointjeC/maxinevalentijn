@@ -8,30 +8,19 @@
         canvas { display: block; }
         #ui { position: fixed; top: 20px; width: 100%; text-align: center; color: white; text-shadow: 3px 3px #000; font-size: 28px; pointer-events: none; }
         #stats { position: fixed; top: 20px; left: 20px; color: #ff4d6d; font-size: 24px; text-shadow: 2px 2px #000; }
-        
-        /* Home knop stijl */
-        .home-btn {
-            position: fixed; top: 20px; right: 20px; z-index: 1000;
-            background: #ff4d6d; color: white; padding: 10px 20px;
-            border-radius: 20px; text-decoration: none; font-weight: bold;
-            border: 2px solid white; box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-        }
-        .win-menu {
-            position: fixed; top: 70%; left: 50%; transform: translate(-50%, -50%);
-            z-index: 2000; text-align: center; display: none;
+        /* Toegevoegd: een knop om terug te gaan naar de hoofdpagina */
+        .home-btn { 
+            position: fixed; top: 20px; right: 20px; background: #ff4d6d; 
+            color: white; padding: 10px 15px; border-radius: 15px; 
+            text-decoration: none; font-weight: bold; border: 2px solid white;
         }
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="home-btn">🏠 Terug naar Menu</a>
+    <a href="index.html" class="home-btn">🏠 Menu</a>
     <div id="stats">❤️❤️❤️</div>
-    <div id="ui">LEVEL 1: DOOR DE BOSSEN  </div>
-    
-    <div id="winMenu" class="win-menu">
-        <a href="index.html" style="background: #2b9348; color: white; padding: 15px 40px; border-radius: 30px; text-decoration: none; font-size: 24px; border: 3px solid white;">SPEEL OPNIEUW</a>
-    </div>
-
+    <div id="ui">LEVEL 1: DE BOSSEN</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -75,7 +64,7 @@ function getLevel(lvl) {
         document.body.style.backgroundColor = "#5c94fc";
         for(let i=0; i<3; i++) hazards.push({x: 2000 + i*800, baseY: 300, y: 300, phase: i});
         return {
-            name: "LEVEL 1: DOOR DE BOSSEN ",
+            name: "LEVEL 1: DE BOSSEN ",
             finish: 6000,
             enemies: [{x: 5000, y: canvas.height-250, w: 180, h: 180, name: "ARTHUR", color: "#2dcfb3", hp: 6, speedX: 4, defeated: false}],
             platforms: [
@@ -90,7 +79,7 @@ function getLevel(lvl) {
         document.body.style.backgroundColor = "#4834d4";
         movingPlatforms.push({x: 1000, y: canvas.height-100, w: 400, h: 100, range: 1100, startX: 1000, speed: 0.0008});
         return {
-            name: "LEVEL 2: DE PAARSE BERGEN",
+            name: "LEVEL 2: DE PAARSE BERGEN ",
             finish: 7500,
             enemies: [{x: 6500, y: canvas.height-250, w: 220, h: 220, name: "FELIX", color: "#6c5ce7", hp: 10, speedX: 5, defeated: false}],
             platforms: [
@@ -102,12 +91,12 @@ function getLevel(lvl) {
         document.body.style.backgroundColor = "#ff9ff3";
         return {
             name: "LEVEL 3: HET LIEFDESKASTEEL",
-            finish: 2600, // Iets korter gemaakt zodat de camera mooi stopt
+            finish: 2500, // Finish iets aangepast zodat ze in beeld blijft
             enemies: [],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 800, h: 100},
                 {x: 900, y: canvas.height-250, w: 400, h: 40},
-                {x: 1400, y: canvas.height-100, w: 2000, h: 100} // Plateau waar Maxine op staat
+                {x: 1400, y: canvas.height-100, w: 3000, h: 100}
             ]
         };
     }
@@ -140,14 +129,7 @@ function spawnLove() {
 }
 
 function update() {
-    if(winState) { 
-        spawnLove(); 
-        particles.forEach((p, i) => { p.y += p.vy; p.x += p.vx; if(p.y < -50) particles.splice(i, 1); }); 
-        document.getElementById('winMenu').style.display = 'block';
-        draw(); 
-        requestAnimationFrame(update); 
-        return; 
-    }
+    if(winState) { spawnLove(); particles.forEach((p, i) => { p.y += p.vy; p.x += p.vx; if(p.y < -50) particles.splice(i, 1); }); draw(); requestAnimationFrame(update); return; }
 
     if(keys['ArrowRight']) { player.x += player.speed; player.frameX = (Math.floor(Date.now()/150)%3); }
     else if(keys['ArrowLeft']) { player.x -= player.speed; player.frameX = (Math.floor(Date.now()/150)%3); }
@@ -213,10 +195,6 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // De camera stopt nu bij het einde van Level 3 zodat we Maxine zien
-    const maxScroll = (currentLevel === 3) ? 1500 : 10000;
-    const camX = Math.min(Math.max(0, player.x - canvas.width/3), maxScroll);
-
     if(winState) {
         ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 60px Arial";
         ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2 - 50);
@@ -225,7 +203,10 @@ function draw() {
         return;
     }
 
-    // Wolken en Bomen
+    // Camera: we stoppen het scrollen iets eerder in level 3 voor Maxine
+    const camX = Math.min(player.x - canvas.width/3, (currentLevel === 3 ? 1800 : 10000));
+
+    // Wolken
     ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
     clouds.forEach(c => {
         ctx.beginPath(); ctx.arc(c.x - camX * 0.2, c.y, 40, 0, Math.PI * 2); ctx.fill();
@@ -234,7 +215,7 @@ function draw() {
     ctx.save();
     ctx.translate(-camX, 0);
 
-    // Teken Platforms
+    // Platforms
     [...levelData.platforms, ...movingPlatforms].forEach(p => {
         ctx.fillStyle = (currentLevel === 3) ? "#ff75a0" : "#27ae60"; 
         ctx.fillRect(p.x, p.y, p.w, p.h);
@@ -242,21 +223,11 @@ function draw() {
         ctx.fillRect(p.x, p.y, p.w, 15);
     });
 
-    // Teken Vijanden
-    levelData.enemies.forEach(en => {
-        if(!en.defeated) {
-            ctx.fillStyle = en.color; ctx.beginPath(); ctx.roundRect(en.x, en.y, en.w, en.h, 20); ctx.fill();
-        } else {
-            ctx.fillStyle = "#4d4d4d"; ctx.beginPath(); ctx.roundRect(en.x + 20, en.y + en.h - 180, 150, 180, [50, 50, 0, 0]); ctx.fill();
-        }
-    });
-
-    // Teken Antoine
+    // Antoine
     ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
 
-    // TEKEN MAXINE (Nu met haar voeten op het platform in Level 3)
+    // MAXINE FIX: Lager gezet (canvas.height - 380) zodat ze volledig op het platform staat
     if(currentLevel === 3) {
-        // We zetten haar op y = canvas.height - 380 (100px grond + haar hoogte)
         ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2400, canvas.height-380, 180, 280);
     }
 
@@ -268,5 +239,4 @@ function draw() {
 update();
 </script>
 </body>
-
 </html>
