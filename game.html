@@ -2,20 +2,20 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine - Epic Pixel Edition</title>
+    <title>The Road to Maxine - Cinematic Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #2c3e50; font-family: 'Courier New', Courier, monospace; }
-        canvas { display: block; image-rendering: pixelated; }
-        #ui { position: fixed; top: 20px; width: 100%; text-align: center; color: white; text-shadow: 2px 2px #000; font-size: 24px; pointer-events: none; z-index: 10; }
-        #stats { position: fixed; top: 20px; left: 20px; color: #ff4d6d; font-size: 24px; text-shadow: 2px 2px #000; z-index: 10; }
-        #collect { position: fixed; bottom: 20px; right: 20px; color: #ffeb3b; font-size: 24px; text-shadow: 2px 2px #000; }
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; }
+        #ui { position: fixed; top: 30px; width: 100%; text-align: center; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.5); font-size: 28px; letter-spacing: 2px; pointer-events: none; z-index: 10; }
+        #stats { position: fixed; top: 30px; left: 30px; color: #ff4d6d; font-size: 30px; z-index: 10; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
+        /* Vignet effect voor diepte */
+        .vignette { position: fixed; top: 0; left: 0; width: 100%; height: 100%; box-shadow: inset 0 0 150px rgba(0,0,0,0.7); pointer-events: none; z-index: 5; }
     </style>
 </head>
 <body>
-
+    <div class="vignette"></div>
     <div id="stats">❤️❤️❤️</div>
     <div id="ui">LEVEL 1: HET MAGISCHE BOS</div>
-    <div id="collect">HARTJES: 0/10 ❤️</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -31,65 +31,57 @@ let currentLevel = 1;
 const gravity = 0.8;
 let winState = false;
 let lives = 3;
-let heartsCollected = 0;
 let shakeTime = 0;
+let timeScale = 1; // Voor slo-mo effect
 
-// Tekstballon data
-let speechBubble = { text: "Ik kom eraan, Maxine!", timer: 0 };
-
-function showSpeech(txt) {
-    speechBubble.text = txt;
-    speechBubble.timer = 120;
-}
+let speechBubble = { text: "", timer: 0 };
+function showSpeech(txt) { speechBubble.text = txt; speechBubble.timer = 150; }
 
 const player = {
-    x: 100, y: 100, width: 80, height: 110,
-    dy: 0, jumpForce: -17, grounded: false, speed: 8,
+    x: 100, y: 100, width: 90, height: 125,
+    dy: 0, jumpForce: -18, grounded: false, speed: 8.5,
     frameX: 0
 };
 
 let projectiles = [];
 let particles = [];
 let hazards = [];
-let items = [];
 let movingPlatforms = [];
+let bgElements = [];
+
+function initLevelDecor(lvl) {
+    bgElements = [];
+    if(lvl === 1) { // Bos vibe
+        for(let i=0; i<30; i++) bgElements.push({x: Math.random()*8000, y: Math.random()*canvas.height, s: Math.random()*2, speed: Math.random()*0.5, type: 'dust'});
+    } else if(lvl === 2) { // Stad vibe
+        for(let i=0; i<50; i++) bgElements.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*3, o: Math.random(), type: 'star'});
+    }
+}
 
 function getLevel(lvl) {
-    hazards = []; items = []; movingPlatforms = []; lives = 3; heartsCollected = 0;
+    hazards = []; movingPlatforms = []; lives = 3;
+    initLevelDecor(lvl);
     document.getElementById('stats').innerText = "❤️".repeat(lives);
-    document.getElementById('collect').innerText = `HARTJES: 0/10 ❤️`;
 
     if(lvl === 1) {
-        for(let i=0; i<10; i++) items.push({x: 500 + i*500, y: canvas.height-250, collected: false});
         return {
             name: "LEVEL 1: DE BOSSEN VAN ARTHUR",
             finish: 6000,
-            enemies: [{x: 5000, y: canvas.height-350, w: 200, h: 250, name: "ARTHUR", color: "#5d4037", hp: 8, speedX: 3, type: 'beast', defeated: false}],
-            platforms: [
-                {x: 0, y: canvas.height-100, w: 1500, h: 100},
-                {x: 1700, y: canvas.height-100, w: 2000, h: 100},
-                {x: 4000, y: canvas.height-100, w: 3000, h: 100}
-            ]
+            color: "#1e3c72",
+            enemies: [{x: 5000, y: canvas.height-350, w: 220, h: 260, name: "ARTHUR", color: "#3d2b1f", hp: 8, speedX: 3, type: 'beast', defeated: false}],
+            platforms: [{x: 0, y: canvas.height-100, w: 2000, h: 100}, {x: 2300, y: canvas.height-100, w: 4000, h: 100}]
         };
     } else if(lvl === 2) {
-        movingPlatforms.push({x: 1000, y: canvas.height-100, w: 500, h: 100, range: 1500, startX: 1000, speed: 0.0007});
-        for(let i=0; i<10; i++) items.push({x: 1200 + i*600, y: canvas.height-200, collected: false});
+        movingPlatforms.push({x: 1200, y: canvas.height-100, w: 600, h: 100, range: 1800, startX: 1200, speed: 0.0006});
         return {
             name: "LEVEL 2: DE REUS VAN DE STAD",
-            finish: 8000,
-            enemies: [{x: 7000, y: canvas.height-450, w: 300, h: 350, name: "FELIX", color: "#455a64", hp: 12, speedX: 4, type: 'giant', defeated: false}],
-            platforms: [
-                {x: 0, y: canvas.height-100, w: 1200, h: 100},
-                {x: 3500, y: canvas.height-100, w: 5000, h: 100}
-            ]
+            finish: 8500,
+            color: "#2c003e",
+            enemies: [{x: 7500, y: canvas.height-450, w: 320, h: 360, name: "FELIX", color: "#2d3436", hp: 12, speedX: 4, type: 'giant', defeated: false}],
+            platforms: [{x: 0, y: canvas.height-100, w: 1200, h: 100}, {x: 3800, y: canvas.height-100, w: 6000, h: 100}]
         };
     } else {
-        return {
-            name: "LEVEL 3: HET LIEFDESKASTEEL",
-            finish: 3000,
-            enemies: [],
-            platforms: [{x: 0, y: canvas.height-100, w: 5000, h: 100}]
-        };
+        return { name: "LEVEL 3: HET LIEFDESKASTEEL", finish: 3000, color: "#ff75a0", enemies: [], platforms: [{x: 0, y: canvas.height-100, w: 5000, h: 100}] };
     }
 }
 
@@ -99,115 +91,94 @@ const keys = {};
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
     if(e.code === 'Space') { 
-        projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 20 });
-        if(Math.random() > 0.7) showSpeech("Pak aan!");
+        projectiles.push({ x: player.x + 80, y: player.y + 55, vx: 22 });
+        if(Math.random() > 0.8) showSpeech("Wegwezen!");
     }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-function drawDragon(ctx, x, y, camX) {
-    const time = Date.now() / 500;
-    const dx = x - camX * 0.4;
-    const dy = y + Math.sin(time) * 50;
-    
+function drawDragon(ctx, camX) {
+    const time = Date.now() / 600;
+    const x = 3000 - camX * 0.3;
+    const y = 200 + Math.sin(time) * 40;
     ctx.save();
-    ctx.translate(dx, dy);
+    ctx.translate(x, y);
+    ctx.rotate(Math.sin(time*0.5)*0.1);
     
-    // Vleugels
-    ctx.fillStyle = "#800000";
-    const wingSize = Math.sin(time * 2) * 40;
-    ctx.beginPath(); // Linker vleugel
-    ctx.moveTo(0, 0); ctx.lineTo(-100, -80 + wingSize); ctx.lineTo(-40, 20); ctx.fill();
-    ctx.beginPath(); // Rechter vleugel
-    ctx.moveTo(40, 0); ctx.lineTo(140, -80 + wingSize); ctx.lineTo(80, 20); ctx.fill();
-
-    // Lichaam
-    ctx.fillStyle = "#a52a2a";
-    ctx.fillRect(0, 0, 100, 50);
-    // Staart
-    ctx.beginPath(); ctx.moveTo(0, 25); ctx.lineTo(-80, 40 + Math.sin(time)*20); ctx.lineTo(0, 45); ctx.fill();
-    // Kop
-    ctx.fillRect(80, -20, 50, 40);
-    ctx.fillStyle = "yellow"; ctx.fillRect(110, -10, 10, 10); // Oog
-    
-    // Vuurspuwen (af en toe)
-    if(Math.sin(time*3) > 0.8) {
-        ctx.fillStyle = "orange";
-        ctx.beginPath(); ctx.arc(140 + Math.random()*20, 0, 15, 0, Math.PI*2); ctx.fill();
+    // Vleugels (Gedetailleerd)
+    ctx.fillStyle = "rgba(139, 0, 0, 0.8)";
+    for(let side of [-1, 1]) {
+        ctx.save();
+        ctx.scale(side, 1);
+        ctx.beginPath();
+        ctx.moveTo(20, 0); ctx.quadraticCurveTo(150, -120 + Math.sin(time*3)*50, 80, 50); ctx.fill();
+        ctx.restore();
     }
-    
+    // Lichaam & Kop
+    ctx.fillStyle = "#8b0000";
+    ctx.beginPath(); ctx.ellipse(50, 0, 80, 30, 0, 0, Math.PI*2); ctx.fill(); // Lijf
+    ctx.fillRect(110, -25, 60, 45); // Kop
+    ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.arc(150, -10, 6, 0, Math.PI*2); ctx.fill(); // Oog
     ctx.restore();
 }
 
 function update() {
     if(winState) { 
-        if(particles.length < 50) particles.push({ x: Math.random()*canvas.width, y: canvas.height+50, vy: -Math.random()*8-2, vx: (Math.random()-0.5)*4, s: Math.random()*20+10, t: "❤️"});
+        if(particles.length < 80) particles.push({ x: Math.random()*canvas.width, y: canvas.height+50, vy: -Math.random()*6-3, vx: (Math.random()-0.5)*5, s: Math.random()*15+5, t: "❤️"});
         particles.forEach((p, i) => { p.y += p.vy; p.x += p.vx; if(p.y < -50) particles.splice(i, 1); });
         draw(); requestAnimationFrame(update); return; 
     }
 
-    if(keys['ArrowRight']) { player.x += player.speed; player.frameX = (Math.floor(Date.now()/120)%3); }
-    else if(keys['ArrowLeft']) { player.x -= player.speed; player.frameX = (Math.floor(Date.now()/120)%3); }
+    let actualSpeed = player.speed * timeScale;
+    if(keys['ArrowRight']) { player.x += actualSpeed; player.frameX = (Math.floor(Date.now()/120)%3); }
+    else if(keys['ArrowLeft']) { player.x -= actualSpeed; player.frameX = (Math.floor(Date.now()/120)%3); }
     else player.frameX = 0;
 
-    if(speechBubble.timer > 0) speechBubble.timer--;
+    if(speechBubble.timer > 0) speechBubble.timer -= timeScale;
+    if(timeScale < 1) timeScale += 0.01; // Herstel slo-mo
 
-    // Moving platforms
     movingPlatforms.forEach(mp => {
         let oldX = mp.x;
         mp.x = mp.startX + (Math.sin(Date.now() * mp.speed) + 1) / 2 * mp.range;
-        if(player.grounded && player.x+40 > mp.x && player.x+40 < mp.x+mp.w && Math.abs(player.y+player.height - mp.y) < 5) {
-            player.x += (mp.x - oldX);
-        }
+        if(player.grounded && player.x+40 > mp.x && player.x+40 < mp.x+mp.w && Math.abs(player.y+player.height - mp.y) < 10) player.x += (mp.x - oldX);
     });
 
-    // Physics
-    player.dy += gravity; player.y += player.dy;
+    player.dy += gravity * timeScale; player.y += player.dy;
     if(keys['ArrowUp'] && player.grounded) { player.dy = player.jumpForce; player.grounded = false; }
 
     player.grounded = false;
     [...levelData.platforms, ...movingPlatforms].forEach(p => {
-        if(player.x+20 < p.x+p.w && player.x+60 > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
+        if(player.x+30 < p.x+p.w && player.x+60 > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
             player.y = p.y - player.height; player.dy = 0; player.grounded = true;
         }
     });
 
-    // Items collecten
-    items.forEach(it => {
-        if(!it.collected && Math.hypot(player.x - it.x, player.y - it.y) < 60) {
-            it.collected = true; heartsCollected++;
-            document.getElementById('collect').innerText = `HARTJES: ${heartsCollected}/10 ❤️`;
-        }
-    });
-
-    // Vijanden
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
-            en.x += en.speedX;
-            if(en.x > 5500 || en.x < 4500) en.speedX *= -1;
-            if(Math.abs(player.x - en.x) < 100 && player.y > en.y - 100) {
-                lives--; player.x -= 200; 
+            en.x += en.speedX * timeScale;
+            if(en.x > 6000 || en.x < 4000) en.speedX *= -1;
+            if(Math.abs(player.x - en.x) < 110 && player.y > en.y - 120) {
+                lives--; player.x -= 250; 
                 document.getElementById('stats').innerText = "❤️".repeat(lives);
-                shakeTime = 20;
+                shakeTime = 25;
                 if(lives <= 0) location.reload();
             }
         }
     });
 
-    // Projectielen & Screen Shake
     projectiles.forEach((proj, pi) => {
-        proj.x += proj.vx;
+        proj.x += proj.vx * timeScale;
         levelData.enemies.forEach(en => {
             if(!en.defeated && proj.x > en.x && proj.x < en.x+en.w && proj.y > en.y && proj.y < en.y+en.h) {
                 en.hp--; projectiles.splice(pi, 1);
-                shakeTime = 10;
-                if(en.hp <= 0) { en.defeated = true; showSpeech("Dat was te makkelijk!"); }
+                shakeTime = 12;
+                if(en.hp <= 0) { en.defeated = true; timeScale = 0.1; showSpeech("Eindelijk verslagen!"); }
             }
         });
     });
 
     if(player.x > levelData.finish) {
-        if(currentLevel < 3) { currentLevel++; levelData = getLevel(currentLevel); player.x = 100; showSpeech("Level " + currentLevel + "!"); }
+        if(currentLevel < 3) { currentLevel++; levelData = getLevel(currentLevel); player.x = 100; showSpeech("Volgende stop..."); }
         else winState = true;
     }
 
@@ -215,66 +186,68 @@ function update() {
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = levelData.color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     const camX = player.x - canvas.width/3;
 
     ctx.save();
-    if (shakeTime > 0) { ctx.translate(Math.random()*10-5, Math.random()*10-5); shakeTime--; }
+    if (shakeTime > 0) { ctx.translate(Math.random()*12-6, Math.random()*12-6); shakeTime--; }
 
-    // Achtergrond (Parallax)
-    ctx.fillStyle = "#1a252f";
-    for(let i=0; i<5; i++) ctx.fillRect((i*1200) - camX*0.2, canvas.height-500, 600, 500);
+    // BG DECOR
+    bgElements.forEach(el => {
+        ctx.fillStyle = "rgba(255,255,255,0.2)";
+        if(el.type === 'dust') { el.y -= el.speed; if(el.y < 0) el.y = canvas.height; ctx.beginPath(); ctx.arc(el.x - camX*0.5, el.y, el.s, 0, Math.PI*2); ctx.fill(); }
+        else { ctx.globalAlpha = el.o; ctx.fillRect(el.x, el.y, el.s, el.s); ctx.globalAlpha = 1; }
+    });
 
-    drawDragon(ctx, 3000, 200, camX);
+    drawDragon(ctx, camX);
 
     ctx.save();
     ctx.translate(-camX, 0);
 
-    // Items
-    items.forEach(it => { if(!it.collected) { ctx.font = "30px Arial"; ctx.fillText("❤️", it.x, it.y + Math.sin(Date.now()/200)*10); }});
-
-    // Platforms
+    // PLATFORMS MET GRADIENT
     levelData.platforms.concat(movingPlatforms).forEach(p => {
-        ctx.fillStyle = "#27ae60"; ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 15);
+        let g = ctx.createLinearGradient(p.x, p.y, p.x, p.y+p.h);
+        g.addColorStop(0, "#2d3436"); g.addColorStop(1, "#000");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 8); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.1)"; ctx.fillRect(p.x, p.y, p.w, 5);
     });
 
-    // Monsters (Custom Drawing)
+    // MONSTERS
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
-            ctx.fillStyle = en.color;
-            if(en.type === 'beast') { // Arthur
-                ctx.fillRect(en.x, en.y, en.w, en.h);
-                ctx.fillStyle = "black"; ctx.fillRect(en.x+30, en.y+40, 40, 40); ctx.fillRect(en.x+130, en.y+40, 40, 40); // Ogen
-            } else { // Felix de Reus
-                ctx.fillRect(en.x, en.y, en.w, en.h);
-                ctx.fillStyle = "#333"; ctx.fillRect(en.x-50, en.y+50, 60, 200); // Knuppel
-            }
-            // Healthbar
-            ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-40, en.hp*20, 15);
-            ctx.fillStyle = "white"; ctx.font = "bold 20px Arial"; ctx.fillText(en.name, en.x, en.y-50);
+            ctx.shadowBlur = 20; ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.fillStyle = en.color; ctx.beginPath(); ctx.roundRect(en.x, en.y, en.w, en.h, 15); ctx.fill();
+            ctx.fillStyle = "#ff7675"; ctx.fillRect(en.x + 40, en.y + 50, 35, 35); ctx.fillRect(en.x + en.w - 75, en.y + 50, 35, 35); // Ogen
+            ctx.shadowBlur = 0;
+            // Health
+            ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(en.x, en.y-50, en.w, 15);
+            ctx.fillStyle = "#d63031"; ctx.fillRect(en.x, en.y-50, (en.hp/8)*en.w, 15);
+        } else {
+            ctx.globalAlpha = 0.5; ctx.font = "bold 20px Arial"; ctx.fillStyle = "white"; ctx.fillText("R.I.P. " + en.name, en.x + 50, en.y + 100); ctx.globalAlpha = 1;
         }
     });
 
-    // Player
+    // PLAYER GLOW
+    ctx.shadowBlur = 15; ctx.shadowColor = "rgba(255,255,255,0.4)";
     ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
+    ctx.shadowBlur = 0;
 
-    // Tekstballon
+    // TEKSTBALLON
     if(speechBubble.timer > 0) {
-        ctx.fillStyle = "white";
-        ctx.beginPath(); ctx.roundRect(player.x-50, player.y-80, 200, 50, 10); ctx.fill();
-        ctx.fillStyle = "black"; ctx.font = "bold 14px Arial"; ctx.fillText(speechBubble.text, player.x-40, player.y-50);
+        ctx.fillStyle = "white"; ctx.beginPath(); ctx.roundRect(player.x + 80, player.y - 60, 220, 45, 12); ctx.fill();
+        ctx.fillStyle = "black"; ctx.font = "bold 16px sans-serif"; ctx.fillText(speechBubble.text, player.x + 100, player.y - 32);
     }
 
     if(currentLevel === 3) ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2500, canvas.height-380, 180, 280);
 
-    ctx.fillStyle = "yellow"; projectiles.forEach(p => ctx.fillRect(p.x, p.y, 40, 15));
+    ctx.fillStyle = "#ffeaa7"; projectiles.forEach(p => { ctx.shadowBlur = 10; ctx.shadowColor = "yellow"; ctx.fillRect(p.x, p.y, 45, 12); ctx.shadowBlur = 0; });
 
     ctx.restore(); ctx.restore();
 
     if(winState) {
-        ctx.fillStyle = "rgba(0,0,0,0.7)"; ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 50px Arial";
+        ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "#ff7675"; ctx.textAlign = "center"; ctx.font = "bold 60px sans-serif";
         ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2);
         particles.forEach(p => { ctx.font = p.s + "px Arial"; ctx.fillText(p.t, p.x, p.y); });
     }
