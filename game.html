@@ -2,18 +2,18 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine - Ultimate Edition</title>
+    <title>The Road to Maxine - Dragon Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Comic Sans MS', cursive; }
-        canvas { display: block; background: linear-gradient(#020d1f, #0a3d62); }
-        #ui { position: fixed; top: 20px; width: 100%; text-align: center; color: white; text-shadow: 2px 2px #d00000; font-size: 28px; pointer-events: none; }
+        body { margin: 0; overflow: hidden; background-color: #5c94fc; font-family: 'Comic Sans MS', cursive; }
+        canvas { display: block; }
+        #ui { position: fixed; top: 20px; width: 100%; text-align: center; color: white; text-shadow: 3px 3px #000; font-size: 28px; pointer-events: none; }
         #stats { position: fixed; top: 20px; left: 20px; color: #ff4d6d; font-size: 24px; text-shadow: 2px 2px #000; }
     </style>
 </head>
 <body>
 
     <div id="stats">❤️❤️❤️</div>
-    <div id="ui">LEVEL 1: Vermoord het monster</div>
+    <div id="ui">LEVEL 1: ARTHUR HET TENTAKELMONSTER</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -31,6 +31,12 @@ let gameActive = true;
 let winState = false;
 let lives = 3;
 
+// Achtergrond objecten
+let clouds = [];
+for(let i=0; i<10; i++) {
+    clouds.push({ x: Math.random() * 5000, y: Math.random() * 300, s: 0.5 + Math.random() });
+}
+
 const player = {
     x: 100, y: 100, width: 90, height: 120,
     dy: 0, jumpForce: -17, grounded: false, speed: 7,
@@ -38,16 +44,15 @@ const player = {
 };
 
 let projectiles = [];
-let particles = []; // Voor vuurwerk
+let particles = [];
 
-// GELUIDS FUNCTIES (Browser Beeps)
 function playSound(freq, type, duration) {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = type;
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     osc.start();
@@ -57,28 +62,32 @@ function playSound(freq, type, duration) {
 function getLevel(lvl) {
     if(lvl === 1) {
         return {
-            name: "LEVEL 1: Vermoord het monster",
+            name: "LEVEL 1: ARTHUR HET TENTAKELMONSTER",
             finish: 4500,
-            enemies: [{x: 1800, y: canvas.height-250, w: 180, h: 180, name: "ARTHUR", color: "#2dcfb3", hp: 6, speedX: 3}],
+            enemies: [{x: 2200, y: canvas.height-250, w: 180, h: 180, name: "ARTHUR", color: "#2dcfb3", hp: 6, speedX: 3}],
             platforms: [
-                {x: 0, y: canvas.height-100, w: 1500, h: 100},
-                {x: 1600, y: canvas.height-100, w: 3500, h: 100}
+                {x: 0, y: canvas.height-100, w: 800, h: 100},
+                {x: 900, y: canvas.height-250, w: 150, h: 30},
+                {x: 1150, y: canvas.height-400, w: 150, h: 30},
+                {x: 1400, y: canvas.height-100, w: 1200, h: 100},
+                {x: 2700, y: canvas.height-250, w: 200, h: 30},
+                {x: 3000, y: canvas.height-100, w: 2000, h: 100}
             ],
-            ladders: [],
-            obstacles: [{x: 2500, y: 300, r: 20}] // Vliegende vuurbal
+            ladders: []
         };
     } else if(lvl === 2) {
         return {
-            name: "LEVEL 2: Vermoord de reus",
+            name: "LEVEL 2: DE KLIM NAAR REUS FELIX",
             finish: 5500,
-            enemies: [{x: 2800, y: canvas.height-250, w: 200, h: 200, name: "FELIX", color: "#6c5ce7", hp: 10, speedX: 5}],
+            enemies: [{x: 3500, y: canvas.height-250, w: 200, h: 200, name: "FELIX", color: "#6c5ce7", hp: 10, speedX: 5}],
             platforms: [
-                {x: 0, y: canvas.height-100, w: 1000, h: 100},
-                {x: 1000, y: canvas.height-400, w: 600, h: 30},
-                {x: 1700, y: canvas.height-100, w: 4000, h: 100}
+                {x: 0, y: canvas.height-100, w: 800, h: 100},
+                {x: 850, y: canvas.height-400, w: 400, h: 30},
+                {x: 1350, y: canvas.height-250, w: 150, h: 30},
+                {x: 1600, y: canvas.height-450, w: 150, h: 30},
+                {x: 1900, y: canvas.height-100, w: 4000, h: 100}
             ],
-            ladders: [{x: 850, y: canvas.height-400, w: 100, h: 320}],
-            obstacles: [{x: 2000, y: 200, r: 25}, {x: 3500, y: 400, r: 25}]
+            ladders: [{x: 850, y: canvas.height-400, w: 80, h: 320}]
         };
     } else {
         return {
@@ -87,12 +96,13 @@ function getLevel(lvl) {
             enemies: [],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 500, h: 100},
-                {x: 600, y: canvas.height-300, w: 200, h: 30},
-                {x: 1000, y: canvas.height-500, w: 300, h: 30},
-                {x: 1500, y: canvas.height-100, w: 5000, h: 100}
+                {x: 600, y: canvas.height-300, w: 150, h: 30},
+                {x: 850, y: canvas.height-450, w: 150, h: 30},
+                {x: 1100, y: canvas.height-200, w: 150, h: 30},
+                {x: 1400, y: canvas.height-400, w: 150, h: 30},
+                {x: 1700, y: canvas.height-100, w: 5000, h: 100}
             ],
-            ladders: [{x: 1050, y: canvas.height-500, w: 100, h: 420}],
-            obstacles: []
+            ladders: []
         };
     }
 }
@@ -103,50 +113,30 @@ const keys = {};
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
     if(e.code === 'Space') {
-        shoot();
-        playSound(440, 'sine', 0.1); // Schiet geluid
+        projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 15 }); // ALTIJD NAAR RECHTS
+        playSound(440, 'sine', 0.1);
     }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
-function shoot() {
-    projectiles.push({
-        x: player.x + (player.lastDirection === 'right' ? 80 : -10),
-        y: player.y + 50,
-        vx: player.lastDirection === 'right' ? 15 : -15
-    });
-}
-
 function handleDeath() {
     lives--;
-    updateHearts();
-    playSound(150, 'sawtooth', 0.3); // Dood geluid
-    if(lives <= 0) {
-        alert("Game Over! Antoine probeert het opnieuw voor Maxine...");
-        location.reload();
-    } else {
-        player.x = 100; player.y = 100;
-    }
-}
-
-function updateHearts() {
     document.getElementById('stats').innerText = "❤️".repeat(lives);
+    playSound(150, 'sawtooth', 0.3);
+    if(lives <= 0) { alert("Game Over! Antoine probeert het opnieuw..."); location.reload(); }
+    else { player.x = 100; player.y = 100; player.dy = 0; }
 }
 
 function update() {
     if(!gameActive) return;
 
-    // Beweging
     if(keys['ArrowRight']) { player.x += player.speed; player.lastDirection = 'right'; player.frameX = (Math.floor(Date.now()/150)%3); }
     else if(keys['ArrowLeft']) { player.x -= player.speed; player.lastDirection = 'left'; player.frameX = (Math.floor(Date.now()/150)%3); }
     else player.frameX = 0;
 
-    // Ladder check
     let touchingLadder = false;
     levelData.ladders.forEach(l => {
-        if(player.x + 60 > l.x && player.x + 30 < l.x + l.w && player.y + player.height > l.y && player.y < l.y + l.h) {
-            touchingLadder = true;
-        }
+        if(player.x + 60 > l.x && player.x + 30 < l.x + l.w && player.y + player.height > l.y && player.y < l.y + l.h) touchingLadder = true;
     });
 
     if(touchingLadder) {
@@ -158,36 +148,20 @@ function update() {
         player.y += player.dy;
     }
 
-    if(keys['ArrowUp'] && player.grounded && !touchingLadder) { 
-        player.dy = player.jumpForce; 
-        player.grounded = false; 
-    }
+    if(keys['ArrowUp'] && player.grounded && !touchingLadder) { player.dy = player.jumpForce; player.grounded = false; }
 
-    // Collisions
     player.grounded = false;
     levelData.platforms.forEach(p => {
         if(player.x+30 < p.x+p.w && player.x+60 > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
-            player.y = p.y - player.height;
-            player.dy = 0;
-            player.grounded = true;
+            player.y = p.y - player.height; player.dy = 0; player.grounded = true;
         }
     });
 
-    // Monsters & Obstakels
     levelData.enemies.forEach(en => {
-        if(!en.defeated && player.x < en.x+en.w - 30 && player.x+player.width > en.x + 30 && player.y < en.y+en.h && player.y+player.height > en.y) {
-            handleDeath();
-        }
         if(!en.defeated) {
             en.x += en.speedX;
-            if(en.x > levelData.finish - 1000 || en.x < 1500) en.speedX *= -1;
-        }
-    });
-
-    levelData.obstacles.forEach(ob => {
-        ob.y += Math.sin(Date.now()/500) * 2;
-        if(Math.hypot(player.x+45 - ob.x, player.y+60 - ob.y) < ob.r + 30) {
-            handleDeath();
+            if(en.x > levelData.finish - 500 || en.x < 1500) en.speedX *= -1;
+            if(player.x < en.x+en.w - 30 && player.x+player.width > en.x + 30 && player.y < en.y+en.h && player.y+player.height > en.y) handleDeath();
         }
     });
 
@@ -195,13 +169,8 @@ function update() {
         proj.x += proj.vx;
         levelData.enemies.forEach(en => {
             if(!en.defeated && proj.x > en.x && proj.x < en.x+en.w && proj.y > en.y && proj.y < en.y+en.h) {
-                en.hp--;
-                projectiles.splice(pi, 1);
-                playSound(600, 'square', 0.05);
-                if(en.hp <= 0) {
-                    en.defeated = true;
-                    playSound(200, 'sawtooth', 0.2);
-                }
+                en.hp--; projectiles.splice(pi, 1); playSound(600, 'square', 0.05);
+                if(en.hp <= 0) en.defeated = true;
             }
         });
     });
@@ -210,107 +179,75 @@ function update() {
 
     if(player.x > levelData.finish) {
         if(currentLevel < 3) {
-            currentLevel++;
-            levelData = getLevel(currentLevel);
+            currentLevel++; levelData = getLevel(currentLevel);
             player.x = 100; player.y = 100;
             document.getElementById('ui').innerText = levelData.name;
-        } else {
-            winState = true; gameActive = false;
-            createFireworks();
-        }
+        } else { winState = true; gameActive = false; }
     }
 
     draw();
     requestAnimationFrame(update);
 }
 
-// VUURWERK FUNCTIE
-function createFireworks() {
-    for(let i=0; i<100; i++) {
-        particles.push({
-            x: canvas.width/2, y: canvas.height/2,
-            vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10,
-            color: `hsl(${Math.random()*360}, 100%, 50%)`, life: 100
-        });
-    }
-}
-
-function drawScaryMonster(en) {
-    const shake = Math.sin(Date.now()/50)*5;
-    ctx.save();
-    ctx.translate(en.x + shake, en.y + shake);
-    ctx.fillStyle = en.color;
-    ctx.beginPath(); ctx.moveTo(0, en.h); ctx.quadraticCurveTo(en.w/2, -20, en.w, en.h); ctx.fill();
-    ctx.fillStyle = "red";
-    ctx.beginPath(); ctx.arc(en.w*0.3, en.h*0.4, 15, 0, Math.PI*2); ctx.arc(en.w*0.7, en.h*0.4, 15, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "white"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center"; ctx.fillText(en.name, en.w/2, -40);
-    ctx.fillStyle = "red"; ctx.fillRect(0, -30, (en.hp * (en.w/10)), 15);
-    ctx.restore();
-}
-
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const camX = player.x - canvas.width/3;
+
+    // WOLKEN & DRAAK (Parallax)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    clouds.forEach(c => {
+        ctx.beginPath(); ctx.arc(c.x - camX*0.2, c.y, 30, 0, Math.PI*2); ctx.fill();
+        c.x -= 0.5; if(c.x < -100) c.x = 5000;
+    });
+
+    // DE DRAAK
+    const dragonX = (Date.now() / 10) % (canvas.width + 5000);
+    ctx.fillStyle = "green";
+    ctx.font = "80px Arial";
+    ctx.fillText("🐲", 4000 - dragonX - camX*0.5, 150 + Math.sin(Date.now()/500)*50);
+
     ctx.save();
     ctx.translate(-camX, 0);
 
     // Ladders & Platforms
     levelData.ladders.forEach(l => {
-        ctx.fillStyle = "#5e371a"; ctx.fillRect(l.x, l.y, 10, l.h); ctx.fillRect(l.x + l.w - 10, l.y, 10, l.h);
-        for(let i=10; i<l.h; i+=25) { ctx.fillRect(l.x, l.y + i, l.w, 6); }
+        ctx.fillStyle = "#8e44ad"; ctx.fillRect(l.x, l.y, l.w, l.h); // Paarse ladder voor contrast
     });
 
     levelData.platforms.forEach(p => {
-        ctx.fillStyle = "#1e272e"; ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = "#34495e"; ctx.fillRect(p.x, p.y, p.w, 10);
+        ctx.fillStyle = "#27ae60"; ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 10);
     });
 
-    // Spandoek aan het einde van level 1 & 2
+    // Spandoek
     if(currentLevel < 3) {
-        ctx.fillStyle = "white"; ctx.fillRect(levelData.finish - 400, canvas.height-350, 300, 100);
-        ctx.fillStyle = "black"; ctx.font = "bold 20px Arial"; ctx.fillText("GO MAXINE! NEXT LEVEL ->", levelData.finish-380, canvas.height-290);
+        ctx.fillStyle = "white"; ctx.fillRect(levelData.finish - 450, canvas.height-350, 350, 80);
+        ctx.fillStyle = "black"; ctx.font = "bold 20px Arial"; ctx.fillText("🏁 GO MAXINE! NEXT LEVEL ->", levelData.finish-430, canvas.height-300);
     }
 
-    // Obstakels (Vuurballen)
-    levelData.obstacles.forEach(ob => {
-        ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(ob.x, ob.y, ob.r, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = "yellow"; ctx.beginPath(); ctx.arc(ob.x, ob.y, ob.r/2, 0, Math.PI*2); ctx.fill();
+    levelData.enemies.forEach(en => {
+        if(!en.defeated) {
+            ctx.fillStyle = en.color; ctx.fillRect(en.x, en.y, en.w, en.h);
+            ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-20, en.hp*20, 10);
+        }
     });
 
-    levelData.enemies.forEach(en => { if(!en.defeated) drawScaryMonster(en); });
     ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
 
     if(currentLevel === 3) {
-        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 5500, canvas.height-380, 180, 280);
+        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 5600, canvas.height-380, 180, 280);
     }
 
-    projectiles.forEach(p => { ctx.fillStyle = "cyan"; ctx.fillRect(p.x, p.y, 25, 8); });
+    ctx.fillStyle = "yellow";
+    projectiles.forEach(p => ctx.fillRect(p.x, p.y, 25, 8));
+
     ctx.restore();
 
     if(winState) {
-        // Finale animatie
-        ctx.fillStyle = "rgba(0,0,0,0.8)";
-        ctx.fillRect(0,0,canvas.width, canvas.height);
-        
-        // Vuurwerk deeltjes
-        particles.forEach((p, i) => {
-            ctx.fillStyle = p.color;
-            ctx.fillRect(p.x, p.y, 5, 5);
-            p.x += p.vx; p.y += p.vy; p.life--;
-            if(p.life <= 0) particles.splice(i, 1);
-        });
-        if(particles.length < 50) createFireworks();
-
-        ctx.fillStyle = "white"; ctx.textAlign = "center";
-        ctx.font = "bold 40px Arial";
-        ctx.fillText("GEWONNEN! ❤️ ANTOINE & MAXINE ❤️", canvas.width/2, canvas.height/2 - 50);
-        ctx.font = "25px Arial";
-        ctx.fillText("HET VUURWERK SPAT ERVAN AF!", canvas.width/2, canvas.height/2 + 20);
-        
-        // Teken kussende poppetjes in het midden
-        ctx.drawImage(spriteSheet, 0, 150, 200, 300, canvas.width/2 - 100, canvas.height/2 + 100, 90, 120);
-        ctx.drawImage(spriteSheet, 650, 250, 300, 600, canvas.width/2 + 10, canvas.height/2 + 100, 90, 120);
-        ctx.font = "50px Arial"; ctx.fillText("💋", canvas.width/2, canvas.height/2 + 150);
+        ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0,0,canvas.width, canvas.height);
+        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 40px Arial";
+        ctx.fillText("GEWONNEN! ❤️ ANTOINE & MAXINE ❤️", canvas.width/2, canvas.height/2);
+        ctx.font = "80px Arial"; ctx.fillText("🎆🎇🎆", canvas.width/2, canvas.height/2 + 100);
     }
 }
 update();
