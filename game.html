@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine - Smooth Edition</title>
+    <title>The Road to Maxine - Forest & Ferry Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #5c94fc; font-family: 'Comic Sans MS', cursive; }
         canvas { display: block; }
@@ -31,8 +31,11 @@ let gameActive = true;
 let winState = false;
 let lives = 3;
 
+// Decoratie objecten
 let clouds = [];
+let trees = [];
 for(let i=0; i<20; i++) clouds.push({ x: Math.random() * 10000, y: Math.random() * 300, s: 0.3 + Math.random() });
+for(let i=0; i<30; i++) trees.push({ x: i * 300 + Math.random()*100, scale: 0.8 + Math.random()*0.5 });
 
 const player = {
     x: 100, y: 100, width: 90, height: 120,
@@ -69,31 +72,28 @@ function getLevel(lvl) {
         };
     } else if(lvl === 2) {
         document.body.style.backgroundColor = "#4834d4";
-        // BEWEGEND PLATFORM: Nu veel simpeler en trager
-        movingPlatforms.push({x: 2500, y: canvas.height-300, w: 250, h: 40, range: 250, startX: 2500, speed: 0.001});
+        // BEWEGEND PLATFORM: Overbrugt nu de hele kloof als een veerboot
+        movingPlatforms.push({x: 1000, y: canvas.height-100, w: 400, h: 100, range: 1100, startX: 1000, speed: 0.0008});
         return {
             name: "LEVEL 2: DE PAARSE BERGEN VAN FELIX",
             finish: 7500,
             enemies: [{x: 6500, y: canvas.height-250, w: 220, h: 220, name: "FELIX", color: "#6c5ce7", hp: 10, speedX: 5, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1000, h: 100},
-                {x: 1200, y: canvas.height-300, w: 400, h: 40},
-                {x: 1800, y: canvas.height-500, w: 400, h: 40},
-                {x: 3500, y: canvas.height-100, w: 5000, h: 100}
+                {x: 2500, y: canvas.height-100, w: 6000, h: 100}
             ],
-            ladders: [{x: 1250, y: canvas.height-300, w: 80, h: 210}, {x: 1850, y: canvas.height-500, w: 80, h: 210}]
+            ladders: []
         };
     } else {
         document.body.style.backgroundColor = "#ff9ff3";
         return {
             name: "LEVEL 3: HET LIEFDESKASTEEL",
-            finish: 3500,
+            finish: 3000,
             enemies: [],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 800, h: 100},
-                {x: 950, y: canvas.height-250, w: 300, h: 40}, // Dichterbij gezet
-                {x: 1400, y: canvas.height-350, w: 300, h: 40}, // Extra tussenplatform
-                {x: 1850, y: canvas.height-100, w: 3000, h: 100} // Finish platform
+                {x: 900, y: canvas.height-250, w: 400, h: 40},
+                {x: 1400, y: canvas.height-100, w: 3000, h: 100}
             ],
             ladders: []
         };
@@ -112,15 +112,15 @@ window.addEventListener('keyup', e => keys[e.code] = false);
 function handleDeath() {
     lives--;
     document.getElementById('stats').innerText = "❤️".repeat(Math.max(0, lives));
-    if(lives <= 0) { alert("Antoine probeert het opnieuw!"); location.reload(); }
+    if(lives <= 0) { alert("Antoine geeft nooit op!"); location.reload(); }
     else { player.x = 100; player.y = 100; player.dy = 0; }
 }
 
 function spawnLove() {
-    if(particles.length > 60) return; // Nog strenger limiet voor prestaties
+    if(particles.length > 50) return;
     particles.push({
         x: Math.random() * canvas.width, y: canvas.height + 50,
-        vy: -Math.random() * 7 - 3, vx: (Math.random() - 0.5) * 4,
+        vy: -Math.random() * 6 - 4, vx: (Math.random() - 0.5) * 4,
         size: Math.random() * 25 + 10,
         type: Math.random() > 0.5 ? "❤️" : "💋"
     });
@@ -133,36 +133,32 @@ function update() {
     else if(keys['ArrowLeft']) { player.x -= player.speed; player.frameX = (Math.floor(Date.now()/150)%3); }
     else player.frameX = 0;
 
-    movingPlatforms.forEach(mp => { mp.x = mp.startX + Math.sin(Date.now() * mp.speed) * mp.range; });
+    movingPlatforms.forEach(mp => { 
+        let oldX = mp.x;
+        mp.x = mp.startX + (Math.sin(Date.now() * mp.speed) + 1) / 2 * mp.range; 
+        if(player.grounded) {
+             // Speler meeschuiven als hij op het platform staat
+             levelData.platforms.forEach(p => {}); // Dummy
+             if(player.x+45 > mp.x && player.x+45 < mp.x+mp.w && player.y+player.height === mp.y) {
+                 player.x += (mp.x - oldX);
+             }
+        }
+    });
     
     hazards.forEach(h => {
         h.y = h.baseY + Math.sin(Date.now()/400 + h.phase) * 100;
         if(Math.hypot(player.x+45 - h.x, player.y+60 - h.y) < 40) handleDeath();
     });
 
-    let touchingLadder = false;
-    levelData.ladders.forEach(l => {
-        if(player.x + 60 > l.x && player.x + 30 < l.x + l.w && player.y + player.height > l.y && player.y < l.y + l.h) touchingLadder = true;
-    });
+    player.dy += gravity;
+    player.y += player.dy;
 
-    if(touchingLadder) {
-        player.dy = 0;
-        if(keys['ArrowUp']) player.y -= 7;
-        if(keys['ArrowDown']) player.y += 7;
-    } else {
-        player.dy += gravity;
-        player.y += player.dy;
-    }
-
-    if(keys['ArrowUp'] && player.grounded && !touchingLadder) { player.dy = player.jumpForce; player.grounded = false; }
+    if(keys['ArrowUp'] && player.grounded) { player.dy = player.jumpForce; player.grounded = false; }
 
     player.grounded = false;
     [...levelData.platforms, ...movingPlatforms].forEach(p => {
         if(player.x+30 < p.x+p.w && player.x+60 > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
-            player.y = p.y - player.height; 
-            // Als het een bewegend platform is, beweeg de speler mee
-            if(p.speed) player.x += Math.cos(Date.now() * p.speed) * p.range * p.speed;
-            player.dy = 0; player.grounded = true;
+            player.y = p.y - player.height; player.dy = 0; player.grounded = true;
         }
     });
 
@@ -210,6 +206,20 @@ function draw() {
     }
 
     const camX = player.x - canvas.width/3;
+
+    // BOMEN (Level 1)
+    if(currentLevel === 1) {
+        trees.forEach(t => {
+            ctx.fillStyle = "#1b4d3e";
+            let tx = t.x - camX * 0.5;
+            ctx.beginPath();
+            ctx.moveTo(tx, canvas.height-100);
+            ctx.lineTo(tx + 40*t.scale, canvas.height-100 - 120*t.scale);
+            ctx.lineTo(tx + 80*t.scale, canvas.height-100);
+            ctx.fill();
+        });
+    }
+
     ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
     clouds.forEach(c => {
         ctx.beginPath(); ctx.arc(c.x - camX * 0.2, c.y, 40, 0, Math.PI * 2); ctx.fill();
@@ -224,14 +234,11 @@ function draw() {
 
     hazards.forEach(h => { ctx.fillStyle = "orange"; ctx.beginPath(); ctx.arc(h.x, h.y, 15, 0, Math.PI*2); ctx.fill(); });
 
-    levelData.ladders.forEach(l => {
-        ctx.fillStyle = "#5d3a1a"; ctx.fillRect(l.x, l.y, 15, l.h); ctx.fillRect(l.x + l.w - 15, l.y, 15, l.h);
-        ctx.fillStyle = "#8b4513"; for(let j=10; j<l.h; j+=30) ctx.fillRect(l.x - 5, l.y + j, l.w + 10, 10);
-    });
-
     [...levelData.platforms, ...movingPlatforms].forEach(p => {
-        ctx.fillStyle = "#27ae60"; ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 15);
+        ctx.fillStyle = (currentLevel === 3) ? "#ff75a0" : "#27ae60"; 
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = (currentLevel === 3) ? "#ff9eb5" : "#2ecc71";
+        ctx.fillRect(p.x, p.y, p.w, 15);
     });
 
     levelData.enemies.forEach(en => {
@@ -245,7 +252,7 @@ function draw() {
     });
 
     ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
-    if(currentLevel === 3) ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2500, canvas.height-380, 180, 280);
+    if(currentLevel === 3) ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2400, canvas.height-380, 180, 280);
 
     ctx.fillStyle = "yellow";
     projectiles.forEach(p => ctx.fillRect(p.x, p.y, 35, 12));
