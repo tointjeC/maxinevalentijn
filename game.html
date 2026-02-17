@@ -247,11 +247,61 @@ function draw() {
     ctx.restore(); ctx.restore();
 
     if(winState) {
-        ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 50px Arial";
-        ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2);
+        // Donkere overlay voor focus
+        ctx.fillStyle = "rgba(0,0,0,0.7)"; 
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+
+        // We zetten de camera stil op de toren (camX rond de 1800)
+        const winCamX = 1800;
+        ctx.save();
+        ctx.translate(-winCamX, 0);
+
+        // Teken de toren nog een keer zodat ze niet in de lucht zweven
+        ctx.fillStyle = "#7f8c8d";
+        ctx.beginPath(); ctx.roundRect(2100, canvas.height-550, 800, 600, 5); ctx.fill();
+        
+        // Teken Antoine en Maxine naast elkaar op de toren
+        // Antoine (links)
+        ctx.drawImage(spriteSheet, 0, 150, 200, 300, 2300, canvas.height-660, 80, 110);
+        // Maxine (rechts)
+        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2400, canvas.height-830, 180, 280);
+
+        // Kusjes en hartjes direct rondom hen
+        ctx.font = "40px Arial";
+        ctx.fillText("💋", 2380, canvas.height-680);
+        ctx.fillText("❤️", 2450, canvas.height-750);
+        ctx.fillText("💋", 2520, canvas.height-650);
+
+        ctx.restore();
+
+        // Grote tekst in het midden
+        ctx.fillStyle = "white"; 
+        ctx.textAlign = "center"; 
+        ctx.font = "bold 60px Arial";
+        ctx.shadowBlur = 20; ctx.shadowColor = "#ff4d6d";
+        ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2 - 50);
+        
+        // Extra hartjes regen over het hele scherm
+        if(particles.length < 100) {
+            particles.push({ 
+                x: Math.random()*canvas.width, 
+                y: canvas.height+50, 
+                vy: -Math.random()*5-2, 
+                vx: (Math.random()-0.5)*10, 
+                s: Math.random()*20+20, 
+                t: Math.random() > 0.5 ? "❤️" : "💋"
+            });
+        }
+        particles.forEach(p => { 
+            ctx.font = p.s + "px Arial";
+            ctx.fillText(p.t, p.x, p.y);
+            p.y += p.vy; p.x += p.vx; 
+        });
+        
+        return;
     }
 }
 </script>
 </body>
+
 </html>
