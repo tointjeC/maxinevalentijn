@@ -31,14 +31,15 @@ let gameActive = true;
 let winState = false;
 let lives = 3;
 
+// WOLKEN
 let clouds = [];
 for(let i=0; i<15; i++) {
-    clouds.push({ x: Math.random() * 8000, y: Math.random() * 400, s: 0.2 + Math.random() * 0.5 });
+    clouds.push({ x: Math.random() * 8000, y: Math.random() * 300, s: 0.5 + Math.random() });
 }
 
 const player = {
     x: 100, y: 100, width: 90, height: 120,
-    dy: 0, jumpForce: -17, grounded: false, speed: 7,
+    dy: 0, jumpForce: -16, grounded: false, speed: 7,
     frameX: 0, lastDirection: 'right'
 };
 
@@ -48,35 +49,35 @@ function getLevel(lvl) {
     if(lvl === 1) {
         return {
             name: "LEVEL 1: VERMOORD HET MONSTER",
-            finish: 4500,
-            enemies: [{x: 2200, y: canvas.height-250, w: 180, h: 180, name: "ARTHUR", color: "#2dcfb3", hp: 6, speedX: 3, defeated: false}],
+            finish: 4000,
+            enemies: [{x: 2000, y: canvas.height-250, w: 180, h: 180, name: "ARTHUR", color: "#2dcfb3", hp: 5, speedX: 3, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1500, h: 100},
-                {x: 1600, y: canvas.height-100, w: 3500, h: 100}
+                {x: 1700, y: canvas.height-100, w: 3000, h: 100}
             ],
             ladders: []
         };
     } else if(lvl === 2) {
         return {
             name: "LEVEL 2: DOOD DE REUS",
-            finish: 5500,
-            enemies: [{x: 3500, y: canvas.height-250, w: 220, h: 220, name: "FELIX", color: "#6c5ce7", hp: 10, speedX: 5, defeated: false}],
+            finish: 5000,
+            enemies: [{x: 3000, y: canvas.height-250, w: 220, h: 220, name: "FELIX", color: "#6c5ce7", hp: 8, speedX: 4, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1000, h: 100},
-                {x: 900, y: canvas.height-350, w: 600, h: 40}, // Lager en dichterbij gemaakt
+                {x: 1000, y: canvas.height-300, w: 600, h: 60}, // Platform is nu VEEL lager en dikker
                 {x: 1600, y: canvas.height-100, w: 4000, h: 100}
             ],
-            ladders: [{x: 950, y: canvas.height-350, w: 100, h: 260}]
+            ladders: [{x: 1050, y: canvas.height-300, w: 120, h: 210}] // Ladder is breder
         };
     } else {
         return {
             name: "LEVEL 3: DE FINALE REDDING",
-            finish: 6000,
+            finish: 5500,
             enemies: [],
             platforms: [
-                {x: 0, y: canvas.height-100, w: 600, h: 100},
-                {x: 700, y: canvas.height-250, w: 300, h: 40},
-                {x: 1100, y: canvas.height-100, w: 5000, h: 100}
+                {x: 0, y: canvas.height-100, w: 800, h: 100},
+                {x: 900, y: canvas.height-250, w: 400, h: 40},
+                {x: 1400, y: canvas.height-100, w: 5000, h: 100}
             ],
             ladders: []
         };
@@ -88,17 +89,15 @@ const keys = {};
 
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
-    if(e.code === 'Space') {
-        projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 15 });
-    }
+    if(e.code === 'Space') projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 16 });
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
 function handleDeath() {
     lives--;
-    document.getElementById('stats').innerText = "❤️".repeat(lives);
+    document.getElementById('stats').innerText = "❤️".repeat(Math.max(0, lives));
     if(lives <= 0) {
-        alert("Game Over! Antoine probeert het opnieuw...");
+        alert("Oei! Antoine probeert het opnieuw voor Maxine...");
         location.reload();
     } else {
         player.x = 100; player.y = 100; player.dy = 0;
@@ -108,8 +107,8 @@ function handleDeath() {
 function update() {
     if(!gameActive) return;
 
-    if(keys['ArrowRight']) { player.x += player.speed; player.lastDirection = 'right'; player.frameX = (Math.floor(Date.now()/150)%3); }
-    else if(keys['ArrowLeft']) { player.x -= player.speed; player.lastDirection = 'left'; player.frameX = (Math.floor(Date.now()/150)%3); }
+    if(keys['ArrowRight']) { player.x += player.speed; player.frameX = (Math.floor(Date.now()/150)%3); }
+    else if(keys['ArrowLeft']) { player.x -= player.speed; player.frameX = (Math.floor(Date.now()/150)%3); }
     else player.frameX = 0;
 
     let touchingLadder = false;
@@ -138,7 +137,7 @@ function update() {
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             en.x += en.speedX;
-            if(en.x > levelData.finish - 800 || en.x < 1500) en.speedX *= -1;
+            if(en.x > levelData.finish - 600 || en.x < 1500) en.speedX *= -1;
             if(player.x < en.x+en.w - 30 && player.x+player.width > en.x + 30 && player.y < en.y+en.h && player.y+player.height > en.y) handleDeath();
         }
     });
@@ -171,59 +170,60 @@ function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const camX = player.x - canvas.width/3;
 
+    // WOLKEN & DRAAK (Nu gefixt)
     ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
     clouds.forEach(c => {
-        ctx.beginPath(); ctx.arc(c.x - camX * 0.3, c.y, 40, 0, Math.PI * 2); ctx.fill();
-        c.x -= c.s; if(c.x < -200) c.x = 8000;
+        ctx.beginPath(); ctx.arc(c.x - camX * 0.2, c.y, 40, 0, Math.PI * 2); ctx.fill();
+        c.x -= 0.5; if(c.x < -200) c.x = 8000;
     });
 
     const dragonX = (Date.now() / 15) % (canvas.width + 10000);
     ctx.font = "100px Arial";
-    ctx.fillText("🐲", 6000 - dragonX - camX*0.5, 100 + Math.sin(Date.now()/1000)*60);
+    ctx.fillText("🐲", 5000 - dragonX - camX*0.4, 150 + Math.sin(Date.now()/1000)*50);
 
     ctx.save();
     ctx.translate(-camX, 0);
 
-    // REALISTISCH TRAP DESIGN
+    // TRAP DESIGN
     levelData.ladders.forEach(l => {
-        ctx.fillStyle = "#5d3a1a"; // Donker hout voor leuningen
-        ctx.fillRect(l.x, l.y, 10, l.h);
-        ctx.fillRect(l.x + l.w - 10, l.y, 10, l.h);
-        ctx.fillStyle = "#8b4513"; // Lichter hout voor treden
-        for(let j=15; j<l.h; j+=25) {
-            ctx.fillRect(l.x - 5, l.y + j, l.w + 10, 8);
-        }
+        ctx.fillStyle = "#5d3a1a"; ctx.fillRect(l.x, l.y, 15, l.h); ctx.fillRect(l.x + l.w - 15, l.y, 15, l.h);
+        ctx.fillStyle = "#8b4513";
+        for(let j=10; j<l.h; j+=30) { ctx.fillRect(l.x - 5, l.y + j, l.w + 10, 10); }
     });
 
     levelData.platforms.forEach(p => {
         ctx.fillStyle = "#27ae60"; ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 12);
+        ctx.fillStyle = "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 15);
     });
 
-    // MONSTERS & RIP TEKST
+    // MONSTERS & GROTE RIP GRAFSTEEN
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             ctx.fillStyle = en.color; 
             ctx.beginPath(); ctx.roundRect(en.x, en.y, en.w, en.h, 20); ctx.fill();
             ctx.fillStyle = "white"; ctx.fillRect(en.x+40, en.y+50, 30, 30); ctx.fillRect(en.x+en.w-70, en.y+50, 30, 30);
-            ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-25, en.hp*25, 12);
+            ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-30, en.hp*30, 15);
         } else {
-            // GRAFSTEEN (RIP)
-            ctx.fillStyle = "#7f8c8d";
-            ctx.beginPath(); ctx.roundRect(en.x + en.w/4, en.y + en.h - 100, en.w/2, 100, 10); ctx.fill();
-            ctx.fillStyle = "white"; ctx.font = "bold 20px Arial"; ctx.textAlign = "center";
-            ctx.fillText("RIP " + en.name, en.x + en.w/2, en.y + en.h - 50);
+            // GROTE GRAFSTEEN
+            ctx.fillStyle = "#4d4d4d";
+            ctx.beginPath();
+            ctx.roundRect(en.x + 20, en.y + en.h - 180, 150, 180, [50, 50, 0, 0]);
+            ctx.fill();
+            ctx.fillStyle = "#bdc3c7";
+            ctx.font = "bold 25px Arial"; ctx.textAlign = "center";
+            ctx.fillText("RIP", en.x + 95, en.y + en.h - 100);
+            ctx.fillText(en.name, en.x + 95, en.y + en.h - 60);
         }
     });
 
     ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
 
     if(currentLevel === 3) {
-        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 5700, canvas.height-380, 180, 280);
+        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 5200, canvas.height-380, 180, 280);
     }
 
-    ctx.fillStyle = "#f1c40f";
-    projectiles.forEach(p => ctx.fillRect(p.x, p.y, 30, 10));
+    ctx.fillStyle = "yellow";
+    projectiles.forEach(p => ctx.fillRect(p.x, p.y, 35, 12));
 
     ctx.restore();
 
