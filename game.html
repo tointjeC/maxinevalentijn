@@ -13,7 +13,7 @@
 <body>
 
     <div id="stats">❤️❤️❤️</div>
-    <div id="ui">LEVEL 1: DE BOSSEN VAN ARTHUR</div>
+    <div id="ui">LEVEL 1:Vermoord het monster in het bos</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -75,7 +75,7 @@ function getLevel(lvl) {
         // BEWEGEND PLATFORM: Overbrugt nu de hele kloof als een veerboot
         movingPlatforms.push({x: 1000, y: canvas.height-100, w: 400, h: 100, range: 1100, startX: 1000, speed: 0.0008});
         return {
-            name: "LEVEL 2: DE PAARSE BERGEN VAN FELIX",
+            name: "LEVEL 2: Vermoord de reus in de paarse stad",
             finish: 7500,
             enemies: [{x: 6500, y: canvas.height-250, w: 220, h: 220, name: "FELIX", color: "#6c5ce7", hp: 10, speedX: 5, defeated: false}],
             platforms: [
@@ -262,4 +262,5 @@ function draw() {
 update();
 </script>
 </body>
+
 </html>
