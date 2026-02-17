@@ -2,16 +2,16 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine - Extreme Edition</title>
+    <title>The Road to Maxine - Monster Edition</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Comic Sans MS', cursive; }
-        canvas { display: block; background: linear-gradient(#0a3d62, #1e3799); }
+        canvas { display: block; background: linear-gradient(#020d1f, #0a3d62); }
         #ui { position: fixed; top: 20px; width: 100%; text-align: center; color: white; text-shadow: 2px 2px #d00000; font-size: 28px; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div id="ui">❤️ LEVEL 1: HET GEVECHT MET ARTHUR ❤️</div>
+    <div id="ui">❤️ VERSLA DE MONSTERS! ❤️</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -39,9 +39,9 @@ let projectiles = [];
 function getLevel(lvl) {
     if(lvl === 1) {
         return {
-            name: "LEVEL 1: ARTHUR IS GROOT & BOOS",
-            finish: 4000,
-            enemies: [{x: 1800, y: canvas.height-220, w: 150, h: 150, name: "MONSTER ARTHUR", color: "#2dcfb3", hp: 5, speedX: 3}],
+            name: "LEVEL 1: ARTHUR HET TENTAKELMONSTER",
+            finish: 3500,
+            enemies: [{x: 1800, y: canvas.height-250, w: 180, h: 180, name: "ARTHUR", color: "#2dcfb3", hp: 6, speedX: 3}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1500, h: 100},
                 {x: 1600, y: canvas.height-100, w: 3000, h: 100}
@@ -50,31 +50,30 @@ function getLevel(lvl) {
         };
     } else if(lvl === 2) {
         return {
-            name: "LEVEL 2: DE LADDER NAAR FELIX",
+            name: "LEVEL 2: DE KLIM NAAR REUS FELIX",
             finish: 4500,
-            enemies: [{x: 2500, y: canvas.height-220, w: 160, h: 160, name: "REUS FELIX", color: "#6c5ce7", hp: 8, speedX: 5}],
+            enemies: [{x: 2800, y: canvas.height-250, w: 200, h: 200, name: "FELIX", color: "#6c5ce7", hp: 10, speedX: 5}],
             platforms: [
-                {x: 0, y: canvas.height-100, w: 800, h: 100},
-                {x: 1000, y: canvas.height-450, w: 400, h: 30}, // Het platform waar je niet op kon
-                {x: 1600, y: canvas.height-100, w: 3000, h: 100}
+                {x: 0, y: canvas.height-100, w: 1000, h: 100},
+                {x: 1000, y: canvas.height-400, w: 500, h: 30}, 
+                {x: 1500, y: canvas.height-100, w: 3500, h: 100}
             ],
             ladders: [
-                {x: 1150, y: canvas.height-450, w: 60, h: 350} // De ladder
+                {x: 1050, y: canvas.height-400, w: 80, h: 300} 
             ]
         };
     } else {
         return {
-            name: "LEVEL 3: DE FINALE WEG NAAR MAXINE",
-            finish: 5500,
+            name: "LEVEL 3: DE FINALE REDDING",
+            finish: 5000,
             enemies: [],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 500, h: 100},
-                {x: 600, y: canvas.height-250, w: 200, h: 30},
-                {x: 900, y: canvas.height-400, w: 200, h: 30},
-                {x: 1300, y: canvas.height-550, w: 200, h: 30},
-                {x: 1800, y: canvas.height-100, w: 4000, h: 100}
+                {x: 600, y: canvas.height-300, w: 200, h: 30},
+                {x: 1000, y: canvas.height-500, w: 200, h: 30},
+                {x: 1500, y: canvas.height-100, w: 4000, h: 100}
             ],
-            ladders: [{x: 1370, y: canvas.height-550, w: 60, h: 450}]
+            ladders: [{x: 1060, y: canvas.height-500, w: 80, h: 400}]
         };
     }
 }
@@ -92,37 +91,87 @@ function shoot() {
     projectiles.push({
         x: player.x + (player.lastDirection === 'right' ? 80 : -10),
         y: player.y + 50,
-        vx: player.lastDirection === 'right' ? 14 : -14
+        vx: player.lastDirection === 'right' ? 15 : -15
     });
+}
+
+// Functie om de monster-look te tekenen
+function drawScaryMonster(en) {
+    const shake = Math.sin(Date.now()/50)*5;
+    ctx.save();
+    ctx.translate(en.x + shake, en.y + shake);
+
+    // Lichaam (Blob vorm)
+    ctx.fillStyle = en.color;
+    ctx.beginPath();
+    ctx.moveTo(0, en.h);
+    ctx.quadraticCurveTo(en.w/2, -20, en.w, en.h);
+    ctx.fill();
+
+    // Enge ogen (rood gloeiend)
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(en.w*0.3, en.h*0.4, 25, 0, Math.PI*2);
+    ctx.arc(en.w*0.7, en.h*0.4, 25, 0, Math.PI*2);
+    ctx.fill();
+    
+    ctx.fillStyle = "red";
+    const eyePulse = Math.abs(Math.sin(Date.now()/200)*10);
+    ctx.beginPath();
+    ctx.arc(en.w*0.3, en.h*0.4, 10 + eyePulse/2, 0, Math.PI*2);
+    ctx.arc(en.w*0.7, en.h*0.4, 10 + eyePulse/2, 0, Math.PI*2);
+    ctx.fill();
+
+    // Tentakels/Pootjes onderaan
+    ctx.strokeStyle = en.color;
+    ctx.lineWidth = 10;
+    for(let i=0; i<5; i++) {
+        ctx.beginPath();
+        ctx.moveTo(en.w * (i/4), en.h);
+        ctx.lineTo(en.w * (i/4) + Math.sin(Date.now()/150 + i)*20, en.h + 30);
+        ctx.stroke();
+    }
+    
+    // Naam & HP
+    ctx.fillStyle = "white";
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(en.name, en.w/2, -40);
+    ctx.fillStyle = "red";
+    ctx.fillRect(0, -30, (en.hp * (en.w/10)), 15);
+    
+    ctx.restore();
 }
 
 function update() {
     if(!gameActive) return;
 
-    // Lopen
+    // Horizontaal bewegen
     if(keys['ArrowRight']) { player.x += player.speed; player.lastDirection = 'right'; player.frameX = (Math.floor(Date.now()/150)%3); }
     else if(keys['ArrowLeft']) { player.x -= player.speed; player.lastDirection = 'left'; player.frameX = (Math.floor(Date.now()/150)%3); }
     else player.frameX = 0;
 
-    // Ladder logica
-    player.onLadder = false;
+    // Ladder check
+    let touchingLadder = false;
     levelData.ladders.forEach(l => {
-        if(player.x + 40 > l.x && player.x < l.x + l.w && player.y + player.height > l.y && player.y < l.y + l.h) {
-            player.onLadder = true;
-            if(keys['ArrowUp']) { player.y -= 5; player.dy = 0; }
-            if(keys['ArrowDown']) { player.y += 5; player.dy = 0; }
+        if(player.x + 50 > l.x && player.x + 40 < l.x + l.w && player.y + player.height > l.y && player.y < l.y + l.h) {
+            touchingLadder = true;
         }
     });
 
-    // Springen (alleen als niet op ladder)
-    if(keys['ArrowUp'] && player.grounded && !player.onLadder) { 
-        player.dy = player.jumpForce; 
-        player.grounded = false; 
-    }
-    
-    if(!player.onLadder) {
+    if(touchingLadder) {
+        player.dy = 0; // Geen zwaartekracht op ladder
+        if(keys['ArrowUp']) player.y -= 6;
+        if(keys['ArrowDown']) player.y += 6;
+    } else {
         player.dy += gravity;
         player.y += player.dy;
+    }
+
+    // Springen (alleen op de grond)
+    if(keys['ArrowUp'] && player.grounded && !touchingLadder) { 
+        player.dy = player.jumpForce; 
+        player.grounded = false; 
     }
 
     // Platform collision
@@ -135,19 +184,18 @@ function update() {
         }
     });
 
-    // Monsters (Groter & Enge animatie)
+    // Vijanden bewegen en raken
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             en.x += en.speedX;
-            if(en.x > levelData.finish - 500 || en.x < 1500) en.speedX *= -1;
+            if(en.x > levelData.finish - 400 || en.x < 1500) en.speedX *= -1;
             
-            if(player.x < en.x+en.w - 20 && player.x+player.width > en.x + 20 && player.y < en.y+en.h && player.y+player.height > en.y) {
-                player.x = 100; player.y = 100; // Reset bij dood
+            if(player.x < en.x+en.w - 30 && player.x+player.width > en.x + 30 && player.y < en.y+en.h && player.y+player.height > en.y) {
+                player.x = 100; player.y = 100; // Dood
             }
         }
     });
 
-    // Kogels collision
     projectiles.forEach((proj, pi) => {
         proj.x += proj.vx;
         levelData.enemies.forEach(en => {
@@ -179,54 +227,45 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const camX = player.x - canvas.width/3;
-
     ctx.save();
     ctx.translate(-camX, 0);
 
-    // Ladders tekenen
-    ctx.fillStyle = "#d35400";
+    // Ladders (Trappen)
     levelData.ladders.forEach(l => {
-        ctx.fillRect(l.x, l.y, l.w, l.h);
-        for(let i=0; i<l.h; i+=20) {
-            ctx.fillStyle = "rgba(0,0,0,0.3)";
-            ctx.fillRect(l.x, l.y + i, l.w, 4);
+        ctx.fillStyle = "#5e371a";
+        ctx.fillRect(l.x, l.y, 10, l.h);
+        ctx.fillRect(l.x + l.w - 10, l.y, 10, l.h);
+        for(let i=10; i<l.h; i+=25) {
+            ctx.fillRect(l.x, l.y + i, l.w, 6);
         }
     });
 
     // Platforms
     levelData.platforms.forEach(p => {
         ctx.fillStyle = "#1e272e"; ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = "#485e6e"; ctx.fillRect(p.x, p.y, p.w, 8);
+        ctx.fillStyle = "#34495e"; ctx.fillRect(p.x, p.y, p.w, 10);
     });
 
-    // ANTOINE
+    // Monsters tekenen
+    levelData.enemies.forEach(en => {
+        if(!en.defeated) drawScaryMonster(en);
+    });
+
+    // Antoine
     ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
 
-    // ENGE MONSTERS
-    levelData.enemies.forEach(en => {
-        if(!en.defeated) {
-            const glow = Math.sin(Date.now()/100)*20;
-            ctx.fillStyle = en.color;
-            ctx.shadowBlur = 20; ctx.shadowColor = "red";
-            ctx.fillRect(en.x, en.y, en.w, en.h);
-            ctx.shadowBlur = 0;
-            // Enge ogen
-            ctx.fillStyle = "white"; ctx.fillRect(en.x+30, en.y+40, 30, 30); ctx.fillRect(en.x+en.w-60, en.y+40, 30, 30);
-            ctx.fillStyle = "red"; ctx.fillRect(en.x+40, en.y+50, 10, 10); ctx.fillRect(en.x+en.w-50, en.y+50, 10, 10);
-            // HP balk
-            ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-20, (en.hp * 20), 10);
-            ctx.fillStyle = "white"; ctx.font = "bold 16px Arial"; ctx.fillText(en.name, en.x, en.y-30);
-        }
-    });
-
-    // MAXINE
+    // Maxine
     if(currentLevel === 3) {
-        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 5300, canvas.height-380, 180, 280);
+        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 4800, canvas.height-380, 180, 280);
     }
 
     // Kogels
-    ctx.fillStyle = "#f1c40f";
-    projectiles.forEach(p => ctx.fillRect(p.x, p.y, 25, 8));
+    ctx.fillStyle = "#00d2ff";
+    projectiles.forEach(p => {
+        ctx.shadowBlur = 10; ctx.shadowColor = "cyan";
+        ctx.fillRect(p.x, p.y, 25, 8);
+        ctx.shadowBlur = 0;
+    });
 
     ctx.restore();
 
