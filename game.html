@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine - The Final Adventure</title>
+    <title>The Road to Maxine - Final Version</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
@@ -23,8 +23,12 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+// LAAD DE SPRITES EN START PAS ALS ZE ER ZIJN
 const spriteSheet = new Image();
 spriteSheet.src = 'sprites.png'; 
+spriteSheet.onload = () => {
+    update(); // Start de game loop pas als het plaatje geladen is
+};
 
 let currentLevel = 1;
 const gravity = 0.8;
@@ -39,7 +43,7 @@ function showSpeech(txt) { speechBubble.text = txt; speechBubble.timer = 120; }
 const player = {
     x: 100, y: 100, width: 80, height: 110,
     dy: 0, jumpForce: -16, grounded: false, speed: 9,
-    frameX: 0, jumpsLeft: 2 // DOUBLE JUMP!
+    frameX: 0, jumpsLeft: 2 
 };
 
 let projectiles = [];
@@ -50,17 +54,19 @@ let ambientParticles = [];
 function initLevelDecor(lvl) {
     decoration = [];
     ambientParticles = [];
-    for(let i=0; i<40; i++) {
+    // Vallende deeltjes (bladeren of vonken)
+    for(let i=0; i<45; i++) {
         ambientParticles.push({
             x: Math.random() * 10000,
             y: Math.random() * canvas.height,
-            s: 2 + Math.random() * 4,
-            speedY: 1 + Math.random() * 2,
+            s: 3 + Math.random() * 4,
+            speedY: 1 + Math.random() * 1.5,
             angle: Math.random() * Math.PI * 2
         });
     }
+    // Parallax wolken/bomen
     for(let i=0; i<25; i++) {
-        decoration.push({ x: i * 500, y: 50 + Math.random()*200, s: 0.5 + Math.random() });
+        decoration.push({ x: i * 500 + Math.random()*200, y: 50 + Math.random()*200, s: 0.5 + Math.random() });
     }
 }
 
@@ -68,8 +74,13 @@ function handleDeath() {
     lives--;
     shakeTime = 30;
     document.getElementById('stats').innerText = "❤️".repeat(Math.max(0, lives));
-    if(lives <= 0) { alert("Game Over! Antoine probeert het opnieuw."); location.reload(); }
-    else { player.x = 100; player.y = 100; player.dy = 0; showSpeech("Oei! Nog eens."); }
+    if(lives <= 0) {
+        alert("Antoine geeft nooit op!");
+        location.reload();
+    } else {
+        player.x = 100; player.y = 100; player.dy = 0;
+        showSpeech("Dat deed pijn!");
+    }
 }
 
 function getLevel(lvl) {
@@ -77,30 +88,30 @@ function getLevel(lvl) {
     document.getElementById('stats').innerText = "❤️".repeat(lives);
     if(lvl === 1) {
         return {
-            name: "LEVEL 1:DOOR HET BOS, pipeX: 8500, color: "#1e3c72",
-            enemies: [{x: 4500, y: canvas.height-350, w: 200, h: 250, name: "ARTHUR", color: "#3d2b1f", hp: 8, speedX: 3, defeated: false}],
+            name: "LEVEL 1: DOOR DE BOSSEN ", pipeX: 8500, color: "#1e3c72",
+            enemies: [{x: 4500, y: canvas.height-350, w: 220, h: 260, name: "ARTHUR", color: "#3d2b1f", hp: 8, speedX: 3, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1500, h: 100},
-                {x: 1700, y: canvas.height-250, w: 400, h: 40},
-                {x: 2300, y: canvas.height-400, w: 400, h: 40},
-                {x: 3000, y: canvas.height-100, w: 2500, h: 100}, // Arena
-                {x: 5800, y: canvas.height-250, w: 400, h: 40},
-                {x: 6500, y: canvas.height-400, w: 400, h: 40},
-                {x: 7300, y: canvas.height-100, w: 1500, h: 100}
+                {x: 1800, y: canvas.height-250, w: 400, h: 40},
+                {x: 2400, y: canvas.height-400, w: 400, h: 40},
+                {x: 3100, y: canvas.height-100, w: 2500, h: 100}, // Arena
+                {x: 5800, y: canvas.height-300, w: 400, h: 40},
+                {x: 6500, y: canvas.height-450, w: 400, h: 40},
+                {x: 7300, y: canvas.height-100, w: 1500, h: 100} 
             ]
         };
     } else if(lvl === 2) {
         return {
-            name: "LEVEL 2: DE STAD, pipeX: 9500, color: "#2c003e",
+            name: "LEVEL 2:DOOR DE STAD ", pipeX: 9500, color: "#2c003e",
             enemies: [{x: 5500, y: canvas.height-450, w: 300, h: 350, name: "FELIX", color: "#2d3436", hp: 12, speedX: 4, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1200, h: 100},
-                {x: 1400, y: canvas.height-250, w: 400, h: 40},
-                {x: 2100, y: canvas.height-400, w: 400, h: 40},
-                {x: 2800, y: canvas.height-100, w: 4000, h: 100}, // Arena
-                {x: 7200, y: canvas.height-300, w: 400, h: 40},
-                {x: 8000, y: canvas.height-450, w: 400, h: 40},
-                {x: 8800, y: canvas.height-100, w: 1500, h: 100}
+                {x: 1500, y: canvas.height-280, w: 400, h: 40},
+                {x: 2200, y: canvas.height-450, w: 400, h: 40},
+                {x: 2900, y: canvas.height-100, w: 4000, h: 100}, // Arena
+                {x: 7300, y: canvas.height-320, w: 450, h: 40},
+                {x: 8100, y: canvas.height-480, w: 450, h: 40},
+                {x: 8900, y: canvas.height-100, w: 1500, h: 100}
             ]
         };
     } else {
@@ -118,13 +129,15 @@ window.addEventListener('keydown', e => {
         player.grounded = false;
     }
     keys[e.code] = true; 
-    if(e.code === 'Space') projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 22 });
+    if(e.code === 'Space') {
+        projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 22 });
+    }
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
 function update() {
     if(winState) {
-        if(particles.length < 50) particles.push({ x: Math.random()*canvas.width, y: canvas.height+50, vy: -Math.random()*5-2, vx: (Math.random()-0.5)*4, s: 15, t: "❤️"});
+        if(particles.length < 50) particles.push({ x: Math.random()*canvas.width, y: canvas.height+50, vy: -Math.random()*5-2, vx: (Math.random()-0.5)*4, s: 20, t: "❤️"});
         particles.forEach(p => { p.y += p.vy; p.x += p.vx; });
         draw(); requestAnimationFrame(update); return;
     }
@@ -143,13 +156,12 @@ function update() {
         }
     });
 
-    // Ambient Animation
     ambientParticles.forEach(p => {
         p.y += p.speedY; p.angle += 0.02;
         if(p.y > canvas.height) p.y = -20;
     });
 
-    if(Math.abs(player.x - levelData.pipeX) < 50 && player.grounded) {
+    if(Math.abs(player.x - levelData.pipeX) < 60 && player.grounded) {
         if(currentLevel < 3) { currentLevel++; levelData = getLevel(currentLevel); player.x = 100; player.y = 100; document.getElementById('ui').innerText = levelData.name; }
     }
     if(currentLevel === 3 && player.x > 2500) winState = true;
@@ -157,7 +169,8 @@ function update() {
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             en.x += en.speedX * timeScale;
-            if(Math.abs(player.x - en.x) < 100 && player.y > en.y - 100) handleDeath();
+            if(en.x > 5000 || en.x < 3000) en.speedX *= -1;
+            if(Math.abs(player.x - en.x) < en.w && player.y > en.y - 100) handleDeath();
         }
     });
 
@@ -166,7 +179,7 @@ function update() {
         levelData.enemies.forEach(en => {
             if(!en.defeated && proj.x > en.x && proj.x < en.x+en.w && proj.y > en.y && proj.y < en.y+en.h) {
                 en.hp--; projectiles.splice(pi, 1); shakeTime = 10;
-                if(en.hp <= 0) { en.defeated = true; timeScale = 0.1; showSpeech("Boem!"); }
+                if(en.hp <= 0) { en.defeated = true; timeScale = 0.1; showSpeech("KABOEM!"); }
             }
         });
     });
@@ -184,7 +197,7 @@ function draw() {
 
     decoration.forEach(d => {
         ctx.fillStyle = "rgba(255,255,255,0.1)";
-        ctx.beginPath(); ctx.arc((d.x - camX*0.2)%10000, d.y, 50*d.s, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc((d.x - camX*0.2)%10000, d.y, 60*d.s, 0, Math.PI*2); ctx.fill();
     });
 
     ambientParticles.forEach(p => {
@@ -202,6 +215,7 @@ function draw() {
     if(currentLevel < 3) {
         ctx.fillStyle = "#27ae60"; ctx.fillRect(levelData.pipeX, canvas.height-220, 100, 120);
         ctx.fillStyle = "#2ecc71"; ctx.fillRect(levelData.pipeX-10, canvas.height-250, 120, 40);
+        ctx.fillStyle = "white"; ctx.font = "bold 14px Arial"; ctx.fillText("NEXT LEVEL", levelData.pipeX, canvas.height-265);
     }
 
     levelData.enemies.forEach(en => {
@@ -211,24 +225,26 @@ function draw() {
         }
     });
 
+    // ANTOINE TEKENEN
     ctx.drawImage(spriteSheet, player.frameX*210, 150, 200, 300, player.x, player.y, player.width, player.height);
+    
     if(speechBubble.timer > 0) {
         ctx.fillStyle = "white"; ctx.beginPath(); ctx.roundRect(player.x+80, player.y-60, 180, 40, 10); ctx.fill();
         ctx.fillStyle = "black"; ctx.font = "bold 16px Arial"; ctx.fillText(speechBubble.text, player.x+95, player.y-35);
     }
+
     if(currentLevel === 3) ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2800, canvas.height-380, 180, 280);
 
     ctx.fillStyle = "yellow"; projectiles.forEach(p => ctx.fillRect(p.x, p.y, 40, 12));
     ctx.restore(); ctx.restore();
 
     if(winState) {
-        ctx.fillStyle = "rgba(0,0,0,0.8)"; ctx.fillRect(0,0,canvas.width,canvas.height);
-        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 40px Arial";
+        ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 50px Arial";
         ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2);
-        particles.forEach(p => { ctx.font = "20px Arial"; ctx.fillText(p.t, p.x, p.y); });
+        particles.forEach(p => { ctx.font = "30px Arial"; ctx.fillText(p.t, p.x, p.y); });
     }
 }
-update();
 </script>
 </body>
 </html>
