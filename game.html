@@ -2,16 +2,16 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine - Trilogie</title>
+    <title>The Road to Maxine - Extreme Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #ffc0cb; font-family: 'Comic Sans MS', cursive; }
-        canvas { display: block; background: linear-gradient(#1e3799, #ffc0cb); }
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Comic Sans MS', cursive; }
+        canvas { display: block; background: linear-gradient(#0a3d62, #1e3799); }
         #ui { position: fixed; top: 20px; width: 100%; text-align: center; color: white; text-shadow: 2px 2px #d00000; font-size: 28px; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div id="ui">❤️ LEVEL 1: VERSLA ARTHUR ❤️</div>
+    <div id="ui">❤️ LEVEL 1: HET GEVECHT MET ARTHUR ❤️</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -20,7 +20,6 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// LAAD DE GEMEENSCHAPPELIJKE AFBEELDING
 const spriteSheet = new Image();
 spriteSheet.src = 'sprites.png'; 
 
@@ -32,7 +31,7 @@ let winState = false;
 const player = {
     x: 100, y: 100, width: 90, height: 120,
     dy: 0, jumpForce: -17, grounded: false, speed: 7,
-    frameX: 0, lastDirection: 'right'
+    frameX: 0, lastDirection: 'right', onLadder: false
 };
 
 let projectiles = [];
@@ -40,40 +39,42 @@ let projectiles = [];
 function getLevel(lvl) {
     if(lvl === 1) {
         return {
-            name: "LEVEL 1: HET GEVECHT MET ARTHUR",
+            name: "LEVEL 1: ARTHUR IS GROOT & BOOS",
             finish: 4000,
-            enemies: [{x: 1500, y: canvas.height-180, w: 80, h: 80, name: "ARTHUR", color: "#55efc4", hp: 3, speedX: 2}],
+            enemies: [{x: 1800, y: canvas.height-220, w: 150, h: 150, name: "MONSTER ARTHUR", color: "#2dcfb3", hp: 5, speedX: 3}],
             platforms: [
-                {x: 0, y: canvas.height-100, w: 1200, h: 100},
-                {x: 1400, y: canvas.height-250, w: 300, h: 30},
-                {x: 1800, y: canvas.height-100, w: 2500, h: 100}
-            ]
+                {x: 0, y: canvas.height-100, w: 1500, h: 100},
+                {x: 1600, y: canvas.height-100, w: 3000, h: 100}
+            ],
+            ladders: []
         };
     } else if(lvl === 2) {
         return {
-            name: "LEVEL 2: FELIX ZIJN TERREUR",
-            finish: 4000,
-            enemies: [{x: 1500, y: canvas.height-180, w: 80, h: 80, name: "FELIX", color: "#a29bfe", hp: 5, speedX: 4}],
+            name: "LEVEL 2: DE LADDER NAAR FELIX",
+            finish: 4500,
+            enemies: [{x: 2500, y: canvas.height-220, w: 160, h: 160, name: "REUS FELIX", color: "#6c5ce7", hp: 8, speedX: 5}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 800, h: 100},
-                {x: 1000, y: canvas.height-300, w: 200, h: 30},
-                {x: 1400, y: canvas.height-500, w: 200, h: 30},
-                {x: 1800, y: canvas.height-100, w: 2500, h: 100}
+                {x: 1000, y: canvas.height-450, w: 400, h: 30}, // Het platform waar je niet op kon
+                {x: 1600, y: canvas.height-100, w: 3000, h: 100}
+            ],
+            ladders: [
+                {x: 1150, y: canvas.height-450, w: 60, h: 350} // De ladder
             ]
         };
     } else {
         return {
-            name: "LEVEL 3: DE WEG NAAR MAXINE",
-            finish: 5000,
+            name: "LEVEL 3: DE FINALE WEG NAAR MAXINE",
+            finish: 5500,
             enemies: [],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 500, h: 100},
-                {x: 700, y: canvas.height-250, w: 150, h: 30},
-                {x: 1000, y: canvas.height-450, w: 150, h: 30},
-                {x: 1400, y: canvas.height-300, w: 150, h: 30},
-                {x: 1800, y: canvas.height-500, w: 150, h: 30},
-                {x: 2300, y: canvas.height-100, w: 3000, h: 100}
-            ]
+                {x: 600, y: canvas.height-250, w: 200, h: 30},
+                {x: 900, y: canvas.height-400, w: 200, h: 30},
+                {x: 1300, y: canvas.height-550, w: 200, h: 30},
+                {x: 1800, y: canvas.height-100, w: 4000, h: 100}
+            ],
+            ladders: [{x: 1370, y: canvas.height-550, w: 60, h: 450}]
         };
     }
 }
@@ -91,22 +92,40 @@ function shoot() {
     projectiles.push({
         x: player.x + (player.lastDirection === 'right' ? 80 : -10),
         y: player.y + 50,
-        vx: player.lastDirection === 'right' ? 12 : -12
+        vx: player.lastDirection === 'right' ? 14 : -14
     });
 }
 
 function update() {
     if(!gameActive) return;
 
+    // Lopen
     if(keys['ArrowRight']) { player.x += player.speed; player.lastDirection = 'right'; player.frameX = (Math.floor(Date.now()/150)%3); }
     else if(keys['ArrowLeft']) { player.x -= player.speed; player.lastDirection = 'left'; player.frameX = (Math.floor(Date.now()/150)%3); }
     else player.frameX = 0;
 
-    if(keys['ArrowUp'] && player.grounded) { player.dy = player.jumpForce; player.grounded = false; }
-    
-    player.dy += gravity;
-    player.y += player.dy;
+    // Ladder logica
+    player.onLadder = false;
+    levelData.ladders.forEach(l => {
+        if(player.x + 40 > l.x && player.x < l.x + l.w && player.y + player.height > l.y && player.y < l.y + l.h) {
+            player.onLadder = true;
+            if(keys['ArrowUp']) { player.y -= 5; player.dy = 0; }
+            if(keys['ArrowDown']) { player.y += 5; player.dy = 0; }
+        }
+    });
 
+    // Springen (alleen als niet op ladder)
+    if(keys['ArrowUp'] && player.grounded && !player.onLadder) { 
+        player.dy = player.jumpForce; 
+        player.grounded = false; 
+    }
+    
+    if(!player.onLadder) {
+        player.dy += gravity;
+        player.y += player.dy;
+    }
+
+    // Platform collision
     player.grounded = false;
     levelData.platforms.forEach(p => {
         if(player.x+30 < p.x+p.w && player.x+60 > p.x && player.y+player.height > p.y && player.y+player.height < p.y+p.h && player.dy >= 0) {
@@ -116,16 +135,19 @@ function update() {
         }
     });
 
+    // Monsters (Groter & Enge animatie)
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             en.x += en.speedX;
-            if(en.x > 3500 || en.x < 1200) en.speedX *= -1;
-            if(player.x < en.x+en.w && player.x+player.width > en.x && player.y < en.y+en.h && player.y+player.height > en.y) {
-                player.x = 100; player.y = 100;
+            if(en.x > levelData.finish - 500 || en.x < 1500) en.speedX *= -1;
+            
+            if(player.x < en.x+en.w - 20 && player.x+player.width > en.x + 20 && player.y < en.y+en.h && player.y+player.height > en.y) {
+                player.x = 100; player.y = 100; // Reset bij dood
             }
         }
     });
 
+    // Kogels collision
     projectiles.forEach((proj, pi) => {
         proj.x += proj.vx;
         levelData.enemies.forEach(en => {
@@ -161,38 +183,58 @@ function draw() {
     ctx.save();
     ctx.translate(-camX, 0);
 
-    levelData.platforms.forEach(p => {
-        ctx.fillStyle = "#2d3436"; ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = "#ff7675"; ctx.fillRect(p.x, p.y, p.w, 8);
-    });
-
-    // ANTOINE TEKENEN (Linkerkant van de sheet)
-    // We knippen kleine blokjes van 200x200 aan de linkerkant
-    ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
-
-    // MONSTERS
-    levelData.enemies.forEach(en => {
-        if(!en.defeated) {
-            ctx.fillStyle = en.color; ctx.fillRect(en.x, en.y, en.w, en.h);
-            ctx.fillStyle = "white"; ctx.fillText(en.name + " (" + en.hp + ")", en.x, en.y-10);
+    // Ladders tekenen
+    ctx.fillStyle = "#d35400";
+    levelData.ladders.forEach(l => {
+        ctx.fillRect(l.x, l.y, l.w, l.h);
+        for(let i=0; i<l.h; i+=20) {
+            ctx.fillStyle = "rgba(0,0,0,0.3)";
+            ctx.fillRect(l.x, l.y + i, l.w, 4);
         }
     });
 
-    // MAXINE TEKENEN (Rechterkant van de sheet - Alleen Level 3)
+    // Platforms
+    levelData.platforms.forEach(p => {
+        ctx.fillStyle = "#1e272e"; ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = "#485e6e"; ctx.fillRect(p.x, p.y, p.w, 8);
+    });
+
+    // ANTOINE
+    ctx.drawImage(spriteSheet, player.frameX * 210, 150, 200, 300, player.x, player.y, player.width, player.height);
+
+    // ENGE MONSTERS
+    levelData.enemies.forEach(en => {
+        if(!en.defeated) {
+            const glow = Math.sin(Date.now()/100)*20;
+            ctx.fillStyle = en.color;
+            ctx.shadowBlur = 20; ctx.shadowColor = "red";
+            ctx.fillRect(en.x, en.y, en.w, en.h);
+            ctx.shadowBlur = 0;
+            // Enge ogen
+            ctx.fillStyle = "white"; ctx.fillRect(en.x+30, en.y+40, 30, 30); ctx.fillRect(en.x+en.w-60, en.y+40, 30, 30);
+            ctx.fillStyle = "red"; ctx.fillRect(en.x+40, en.y+50, 10, 10); ctx.fillRect(en.x+en.w-50, en.y+50, 10, 10);
+            // HP balk
+            ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-20, (en.hp * 20), 10);
+            ctx.fillStyle = "white"; ctx.font = "bold 16px Arial"; ctx.fillText(en.name, en.x, en.y-30);
+        }
+    });
+
+    // MAXINE
     if(currentLevel === 3) {
-        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 4800, canvas.height-380, 180, 280);
+        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 5300, canvas.height-380, 180, 280);
     }
 
-    ctx.fillStyle = "yellow";
-    projectiles.forEach(p => ctx.fillRect(p.x, p.y, 20, 10));
+    // Kogels
+    ctx.fillStyle = "#f1c40f";
+    projectiles.forEach(p => ctx.fillRect(p.x, p.y, 25, 8));
 
     ctx.restore();
 
     if(winState) {
-        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillStyle = "rgba(0,0,0,0.9)";
         ctx.fillRect(0,0,canvas.width, canvas.height);
         ctx.fillStyle = "white"; ctx.textAlign = "center";
-        ctx.font = "30px Arial";
+        ctx.font = "bold 35px Arial";
         ctx.fillText("GEWONNEN! JIJ BENT DE ENIGE VOOR MAXINE! ❤️", canvas.width/2, canvas.height/2);
     }
 }
