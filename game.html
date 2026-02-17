@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>The Road to Maxine - Final Version</title>
+    <title>The Road to Maxine - Tower & Monsters</title>
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Segoe UI', sans-serif; }
         canvas { display: block; }
@@ -14,7 +14,7 @@
 <body>
     <div class="vignette"></div>
     <div id="stats">❤️❤️❤️</div>
-    <div id="ui">LEVEL 1: HET LEVENDIGE BOS</div>
+    <div id="ui">LEVEL 1: DOOR DE BOSSEN</div>
     <canvas id="gameCanvas"></canvas>
 
 <script>
@@ -23,12 +23,9 @@ const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// LAAD DE SPRITES EN START PAS ALS ZE ER ZIJN
 const spriteSheet = new Image();
 spriteSheet.src = 'sprites.png'; 
-spriteSheet.onload = () => {
-    update(); // Start de game loop pas als het plaatje geladen is
-};
+spriteSheet.onload = () => { update(); };
 
 let currentLevel = 1;
 const gravity = 0.8;
@@ -52,35 +49,23 @@ let decoration = [];
 let ambientParticles = [];
 
 function initLevelDecor(lvl) {
-    decoration = [];
-    ambientParticles = [];
-    // Vallende deeltjes (bladeren of vonken)
+    decoration = []; ambientParticles = [];
     for(let i=0; i<45; i++) {
         ambientParticles.push({
-            x: Math.random() * 10000,
-            y: Math.random() * canvas.height,
-            s: 3 + Math.random() * 4,
-            speedY: 1 + Math.random() * 1.5,
-            angle: Math.random() * Math.PI * 2
+            x: Math.random() * 10000, y: Math.random() * canvas.height,
+            s: 3 + Math.random() * 4, speedY: 1 + Math.random() * 1.5, angle: Math.random() * Math.PI * 2
         });
     }
-    // Parallax wolken/bomen
     for(let i=0; i<25; i++) {
         decoration.push({ x: i * 500 + Math.random()*200, y: 50 + Math.random()*200, s: 0.5 + Math.random() });
     }
 }
 
 function handleDeath() {
-    lives--;
-    shakeTime = 30;
+    lives--; shakeTime = 30;
     document.getElementById('stats').innerText = "❤️".repeat(Math.max(0, lives));
-    if(lives <= 0) {
-        alert("Antoine geeft nooit op!");
-        location.reload();
-    } else {
-        player.x = 100; player.y = 100; player.dy = 0;
-        showSpeech("Dat deed pijn!");
-    }
+    if(lives <= 0) { alert("Antoine geeft nooit op!"); location.reload(); }
+    else { player.x = 100; player.y = 100; player.dy = 0; showSpeech("Dat deed pijn!"); }
 }
 
 function getLevel(lvl) {
@@ -88,13 +73,13 @@ function getLevel(lvl) {
     document.getElementById('stats').innerText = "❤️".repeat(lives);
     if(lvl === 1) {
         return {
-            name: "LEVEL 1: DOOR DE BOSSEN ", pipeX: 8500, color: "#1e3c72",
+            name: "LEVEL 1: DOOR DE BOSSEN", pipeX: 8500, color: "#1e3c72",
             enemies: [{x: 4500, y: canvas.height-350, w: 220, h: 260, name: "ARTHUR", color: "#3d2b1f", hp: 8, speedX: 3, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1500, h: 100},
                 {x: 1800, y: canvas.height-250, w: 400, h: 40},
                 {x: 2400, y: canvas.height-400, w: 400, h: 40},
-                {x: 3100, y: canvas.height-100, w: 2500, h: 100}, // Arena
+                {x: 3100, y: canvas.height-100, w: 2500, h: 100},
                 {x: 5800, y: canvas.height-300, w: 400, h: 40},
                 {x: 6500, y: canvas.height-450, w: 400, h: 40},
                 {x: 7300, y: canvas.height-100, w: 1500, h: 100} 
@@ -102,20 +87,30 @@ function getLevel(lvl) {
         };
     } else if(lvl === 2) {
         return {
-            name: "LEVEL 2:DOOR DE STAD ", pipeX: 9500, color: "#2c003e",
+            name: "LEVEL 2: DOOR DE STAD", pipeX: 9500, color: "#2c003e",
             enemies: [{x: 5500, y: canvas.height-450, w: 300, h: 350, name: "FELIX", color: "#2d3436", hp: 12, speedX: 4, defeated: false}],
             platforms: [
                 {x: 0, y: canvas.height-100, w: 1200, h: 100},
                 {x: 1500, y: canvas.height-280, w: 400, h: 40},
                 {x: 2200, y: canvas.height-450, w: 400, h: 40},
-                {x: 2900, y: canvas.height-100, w: 4000, h: 100}, // Arena
+                {x: 2900, y: canvas.height-100, w: 4000, h: 100},
                 {x: 7300, y: canvas.height-320, w: 450, h: 40},
                 {x: 8100, y: canvas.height-480, w: 450, h: 40},
                 {x: 8900, y: canvas.height-100, w: 1500, h: 100}
             ]
         };
     } else {
-        return { name: "LEVEL 3: MAXINE'S KASTEEL", pipeX: 99999, color: "#ff75a0", enemies: [], platforms: [{x: 0, y: canvas.height-100, w: 5000, h: 100}] };
+        // LEVEL 3 MET TRAP EN TOREN
+        return { 
+            name: "LEVEL 3: DE TOREN VAN MAXINE", pipeX: 99999, color: "#ff75a0", enemies: [], 
+            platforms: [
+                {x: 0, y: canvas.height-100, w: 1200, h: 100}, // Startvloer
+                {x: 1300, y: canvas.height-200, w: 200, h: 40}, // Trap trede 1
+                {x: 1550, y: canvas.height-300, w: 200, h: 40}, // Trap trede 2
+                {x: 1800, y: canvas.height-400, w: 200, h: 40}, // Trap trede 3
+                {x: 2100, y: canvas.height-550, w: 800, h: 600}  // De Toren zelf
+            ] 
+        };
     }
 }
 
@@ -123,15 +118,9 @@ let levelData = getLevel(currentLevel);
 const keys = {};
 
 window.addEventListener('keydown', e => { 
-    if(e.code === 'ArrowUp' && player.jumpsLeft > 0) {
-        player.dy = player.jumpForce;
-        player.jumpsLeft--;
-        player.grounded = false;
-    }
+    if(e.code === 'ArrowUp' && player.jumpsLeft > 0) { player.dy = player.jumpForce; player.jumpsLeft--; player.grounded = false; }
     keys[e.code] = true; 
-    if(e.code === 'Space') {
-        projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 22 });
-    }
+    if(e.code === 'Space') projectiles.push({ x: player.x + 80, y: player.y + 50, vx: 22 });
 });
 window.addEventListener('keyup', e => keys[e.code] = false);
 
@@ -156,21 +145,19 @@ function update() {
         }
     });
 
-    ambientParticles.forEach(p => {
-        p.y += p.speedY; p.angle += 0.02;
-        if(p.y > canvas.height) p.y = -20;
-    });
+    ambientParticles.forEach(p => { p.y += p.speedY; if(p.y > canvas.height) p.y = -20; });
 
     if(Math.abs(player.x - levelData.pipeX) < 60 && player.grounded) {
         if(currentLevel < 3) { currentLevel++; levelData = getLevel(currentLevel); player.x = 100; player.y = 100; document.getElementById('ui').innerText = levelData.name; }
     }
-    if(currentLevel === 3 && player.x > 2500) winState = true;
+    // Win conditie: Bij Maxine op de toren zijn
+    if(currentLevel === 3 && player.x > 2100 && player.y < canvas.height-500) winState = true;
 
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
             en.x += en.speedX * timeScale;
             if(en.x > 5000 || en.x < 3000) en.speedX *= -1;
-            if(Math.abs(player.x - en.x) < en.w && player.y > en.y - 100) handleDeath();
+            if(Math.abs(player.x - en.x) < en.w - 50 && player.y > en.y - 100) handleDeath();
         }
     });
 
@@ -186,7 +173,6 @@ function update() {
 
     if(timeScale < 1) timeScale += 0.01;
     if(speechBubble.timer > 0) speechBubble.timer--;
-
     draw(); requestAnimationFrame(update);
 }
 
@@ -201,39 +187,61 @@ function draw() {
     });
 
     ambientParticles.forEach(p => {
-        ctx.fillStyle = currentLevel === 1 ? "#2ecc71" : "#f1c40f";
-        ctx.save(); ctx.translate((p.x - camX)%10000, p.y); ctx.rotate(p.angle);
-        ctx.fillRect(0,0,p.s,p.s); ctx.restore();
+        ctx.fillStyle = currentLevel === 1 ? "#2ecc71" : (currentLevel === 2 ? "#f1c40f" : "#ffffff");
+        ctx.fillRect((p.x - camX)%10000, p.y, p.s, p.s);
     });
 
     ctx.save(); ctx.translate(-camX, 0);
+
+    // PLATFORMS TEKENEN
     levelData.platforms.forEach(p => {
-        ctx.fillStyle = "#1a1a1a"; ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 10); ctx.fill();
-        ctx.fillStyle = (currentLevel === 3) ? "#ff9eb5" : "#2ecc71"; ctx.fillRect(p.x, p.y, p.w, 8);
+        ctx.fillStyle = (currentLevel === 3) ? "#7f8c8d" : "#1a1a1a"; // Grijze steen voor toren
+        ctx.beginPath(); ctx.roundRect(p.x, p.y, p.w, p.h, 5); ctx.fill();
+        ctx.fillStyle = (currentLevel === 3) ? "#bdc3c7" : "#2ecc71"; 
+        ctx.fillRect(p.x, p.y, p.w, 8);
     });
 
-    if(currentLevel < 3) {
-        ctx.fillStyle = "#27ae60"; ctx.fillRect(levelData.pipeX, canvas.height-220, 100, 120);
-        ctx.fillStyle = "#2ecc71"; ctx.fillRect(levelData.pipeX-10, canvas.height-250, 120, 40);
-        ctx.fillStyle = "white"; ctx.font = "bold 14px Arial"; ctx.fillText("NEXT LEVEL", levelData.pipeX, canvas.height-265);
+    // LEVEL 3 TOREN DETAILS
+    if(currentLevel === 3) {
+        ctx.fillStyle = "#2c3e50"; // Kantelen van de toren
+        for(let i=0; i<800; i+=100) { ctx.fillRect(2100+i, canvas.height-580, 50, 30); }
     }
 
+    // MONSTERS TEKENEN (Monsterlijk!)
     levelData.enemies.forEach(en => {
         if(!en.defeated) {
-            ctx.fillStyle = en.color; ctx.fillRect(en.x, en.y, en.w, en.h);
+            // Lichaam
+            ctx.fillStyle = en.color;
+            ctx.fillRect(en.x, en.y, en.w, en.h);
+            // Gloeiende Ogen
+            ctx.fillStyle = "red";
+            ctx.shadowBlur = 15; ctx.shadowColor = "red";
+            ctx.beginPath(); ctx.arc(en.x + en.w*0.3, en.y + 60, 15, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(en.x + en.w*0.7, en.y + 60, 15, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+            // Tanden
+            ctx.fillStyle = "white";
+            for(let i=0; i<en.w; i+=40) {
+                ctx.beginPath(); ctx.moveTo(en.x+i, en.y+120); ctx.lineTo(en.x+i+20, en.y+160); ctx.lineTo(en.x+i+40, en.y+120); ctx.fill();
+            }
+            // HP Balk
             ctx.fillStyle = "red"; ctx.fillRect(en.x, en.y-30, (en.hp/8)*en.w, 10);
         }
     });
 
-    // ANTOINE TEKENEN
+    // ANTOINE
     ctx.drawImage(spriteSheet, player.frameX*210, 150, 200, 300, player.x, player.y, player.width, player.height);
     
+    // MAXINE (Op de toren in Level 3)
+    if(currentLevel === 3) {
+        ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2400, canvas.height-830, 180, 280);
+        showSpeech("Kom me redden!");
+    }
+
     if(speechBubble.timer > 0) {
         ctx.fillStyle = "white"; ctx.beginPath(); ctx.roundRect(player.x+80, player.y-60, 180, 40, 10); ctx.fill();
         ctx.fillStyle = "black"; ctx.font = "bold 16px Arial"; ctx.fillText(speechBubble.text, player.x+95, player.y-35);
     }
-
-    if(currentLevel === 3) ctx.drawImage(spriteSheet, 650, 250, 300, 600, 2800, canvas.height-380, 180, 280);
 
     ctx.fillStyle = "yellow"; projectiles.forEach(p => ctx.fillRect(p.x, p.y, 40, 12));
     ctx.restore(); ctx.restore();
@@ -242,7 +250,6 @@ function draw() {
         ctx.fillStyle = "rgba(0,0,0,0.85)"; ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle = "white"; ctx.textAlign = "center"; ctx.font = "bold 50px Arial";
         ctx.fillText("MAXINE IS GERED! ❤️", canvas.width/2, canvas.height/2);
-        particles.forEach(p => { ctx.font = "30px Arial"; ctx.fillText(p.t, p.x, p.y); });
     }
 }
 </script>
