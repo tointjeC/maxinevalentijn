@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎨 Art Studio: Live ❤️</title>
+    <title>🎨 Art Studio: Live Performance ❤️</title>
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.min.js"></script>
     <style>
         :root { --teal: #006d77; --pink: #ffafcc; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; background: var(--bg); overflow: hidden; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; background: var(--bg); overflow: hidden; }
         
-        #setup { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        input { padding: 15px; border-radius: 30px; border: 2px solid var(--teal); width: 250px; font-size: 18px; text-align: center; margin-bottom: 20px; outline: none; }
+        #setup { position: fixed; inset: 0; background: white; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        input { padding: 15px; border-radius: 30px; border: 2px solid var(--teal); width: 220px; font-size: 18px; text-align: center; margin-bottom: 20px; outline: none; }
         
         .container { height: 100vh; display: flex; flex-direction: column; }
         #canvas-wrap { flex-grow: 1; position: relative; background: white; margin: 10px; border-radius: 20px; border: 3px solid var(--teal); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -18,37 +18,42 @@
         
         .btn { padding: 12px 25px; border-radius: 50px; border: none; background: var(--teal); color: white; font-weight: bold; cursor: pointer; }
         
-        #artiest-header { background: var(--pink); padding: 15px; color: white; font-weight: bold; }
-        #toeschouwer-header { background: var(--teal); padding: 10px; color: white; font-size: 14px; }
+        #header { padding: 15px; color: white; min-height: 50px; transition: 0.3s; }
+        .bg-artiest { background: var(--pink); }
+        .bg-kijker { background: var(--teal); }
+
+        .toolbar { padding: 10px; background: white; display: flex; justify-content: center; gap: 15px; align-items: center; }
+        .color-dot { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #eee; transition: 0.2s; }
+        .color-dot.active { border: 3px solid var(--teal); transform: scale(1.2); }
         
-        .toolbar { padding: 10px; background: white; display: flex; justify-content: center; gap: 10px; align-items: center; }
+        #sync-light { width: 10px; height: 10px; background: #ccc; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .syncing { background: #00ff00 !important; box-shadow: 0 0 5px #00ff00; }
         .hidden { display: none !important; }
-        .color-dot { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #eee; }
-        .color-dot.active { border: 3px solid var(--teal); transform: scale(1.1); }
     </style>
 </head>
 <body>
 
 <div id="setup">
     <h1 style="color: var(--teal)">🎨 Art Studio</h1>
-    <input type="text" id="roomCode" placeholder="Kamercode (bijv. date2026)">
-    <button class="btn" onclick="startApp()">Starten</button>
+    <input type="text" id="roomCode" placeholder="Code (bijv. date2026)">
+    <button class="btn" onclick="startApp()">Start Live Sessie</button>
 </div>
 
 <div class="container hidden" id="gameArea">
     <div id="roleMenu" class="toolbar">
         <button class="btn" onclick="chooseRole('artiest')">🖌️ Ik ga Tekenen</button>
-        <button class="btn" style="background:#666;" onclick="chooseRole('kijker')">👀 Ik ga Kijken</button>
+        <button class="btn" style="background:#666;" onclick="chooseRole('kijker')">👀 Ik kijk mee</button>
     </div>
 
-    <div id="artiest-header" class="hidden">
-        <div style="font-size: 11px; text-transform: uppercase;">Jouw geheime opdracht:</div>
-        <div id="currentTask" style="font-size: 20px;">Laden...</div>
-        <button onclick="nextTask()" style="background:rgba(255,255,255,0.3); border:none; color:white; border-radius:10px; padding:5px 10px; margin-top:5px;">Andere zin 🔄</button>
-    </div>
-
-    <div id="toeschouwer-header" class="hidden">
-        ✨ Maxine kijkt live mee naar jouw creatie...
+    <div id="header" class="hidden">
+        <div id="task-area" class="hidden">
+            <small>GEHEIME OPDRACHT:</small>
+            <div id="currentTask" style="font-size: 20px; font-weight: bold;">Laden...</div>
+            <button onclick="nextTask()" style="background:rgba(255,255,255,0.3); border:none; color:white; border-radius:10px; padding:3px 10px; font-size:12px;">Nieuwe zin 🔄</button>
+        </div>
+        <div id="viewer-area" class="hidden">
+            <span id="sync-light"></span> Live verbinding met Antoine...
+        </div>
     </div>
 
     <div id="canvas-wrap">
@@ -66,49 +71,44 @@
 
 <script>
     let pubnub, channel, myRole = '', isDrawing = false, lastX = 0, lastY = 0, activeColor = 'black';
-    
-    const assignments = [
-        "Een pinguïn met een hartjes-ballon", "Een pizza ster", "Een dansende banaan", "Antoine en Maxine hand in hand", 
-        "Een gitaar met vleugels", "Een kat met een zonnebril", "Een kopje koffie met hartjesstoom", "Een vliegende auto", 
-        "Een robot met een bloem", "Een schatkaart naar je hart", "Een konijn in een toverhoed", "Een giraf met een sjaal",
-        "Een luiaard op een regenboog", "Een dolfijn in een zwembad", "Een olifant op een skateboard", "Een zingende cupcake",
-        "Een beer met een feesthoed", "Een uil met een bril", "Een kasteel op een wolk", "Een raket naar de maan",
-        "Een lachende taco", "Een donut met glitters", "Een verliefde avocado", "Een hamburger met vlaggetje",
-        "Zon met zonnebril", "Frietjes met gezichtjes", "Een roze vuurtoren", "Een tandem-fiets"
-        // Hier kun je de rest van je 100 zinnen plakken
-    ];
+    const assignments = ["Pinguïn met ballon", "Pizza ster", "Dansende banaan", "Antoine & Maxine", "Gitaar met vleugels", "Kat met zonnebril", "Donut met glitters", "Robot met bloem", "Schildpad met rugzak", "Kasteel op een wolk"];
+
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const syncLight = document.getElementById('sync-light');
 
     function startApp() {
         const code = document.getElementById('roomCode').value.trim().toLowerCase();
         if(!code) return alert("Code verplicht!");
-        channel = 'art_live_' + code;
+        channel = 'art_v3_' + code;
         
         pubnub = new PubNub({
             publishKey: 'pub-c-49033481-d4f1-460d-852b-f06940f8072f',
             subscribeKey: 'sub-c-17e99708-3010-4411-b1e1-15582c0694a5',
-            uuid: 'user_' + Math.random()
+            uuid: 'u' + Math.floor(Math.random() * 1000)
         });
 
         pubnub.subscribe({ channels: [channel] });
         pubnub.addListener({
             message: (m) => {
                 const d = m.message;
-                if(d.type === 'draw') renderLine(d.x1, d.y1, d.x2, d.y2, d.c);
+                if(d.type === 'draw') {
+                    renderLine(d.x1, d.y1, d.x2, d.y2, d.c);
+                    flashLight();
+                }
                 if(d.type === 'clear') ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
         });
 
         document.getElementById('setup').classList.add('hidden');
         document.getElementById('gameArea').classList.remove('hidden');
-        initCanvas();
+        resizeCanvas();
     }
 
-    const canvas = document.getElementById('paintCanvas');
-    const ctx = canvas.getContext('2d');
-
-    function initCanvas() {
-        canvas.width = canvas.offsetWidth;
-        canvas.height = canvas.offsetHeight;
+    function resizeCanvas() {
+        const rect = canvas.parentNode.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
         ctx.lineCap = 'round';
         ctx.lineWidth = 4;
     }
@@ -116,69 +116,88 @@
     function chooseRole(r) {
         myRole = r;
         document.getElementById('roleMenu').classList.add('hidden');
+        const head = document.getElementById('header');
+        head.classList.remove('hidden');
+        
         if(r === 'artiest') {
-            document.getElementById('artiest-header').classList.remove('hidden');
+            head.className = 'bg-artiest';
+            document.getElementById('task-area').classList.remove('hidden');
             document.getElementById('paintTools').classList.remove('hidden');
             nextTask();
         } else {
-            document.getElementById('toeschouwer-header').classList.remove('hidden');
+            head.className = 'bg-kijker';
+            document.getElementById('viewer-area').classList.remove('hidden');
         }
     }
 
     function nextTask() {
-        const t = assignments[Math.floor(Math.random()*assignments.length)];
-        document.getElementById('currentTask').innerText = t;
+        document.getElementById('currentTask').innerText = assignments[Math.floor(Math.random()*assignments.length)];
     }
 
-    function selColor(c, el) { 
-        activeColor = c; 
-        document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
-        el.classList.add('active');
-    }
-
-    function clearAll() { 
-        pubnub.publish({ channel: channel, message: {type: 'clear'} }); 
+    function flashLight() {
+        syncLight.classList.add('syncing');
+        setTimeout(() => syncLight.classList.remove('syncing'), 50);
     }
 
     function renderLine(x1, y1, x2, y2, c) {
         ctx.strokeStyle = c;
-        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x1 * canvas.width, y1 * canvas.height);
+        ctx.lineTo(x2 * canvas.width, y2 * canvas.height);
+        ctx.stroke();
+    }
+
+    function sendLine(x1, y1, x2, y2, c) {
+        pubnub.publish({
+            channel: channel,
+            message: { 
+                type: 'draw', 
+                x1: x1 / canvas.width, y1: y1 / canvas.height, 
+                x2: x2 / canvas.width, y2: y2 / canvas.height, 
+                c: c 
+            }
+        });
     }
 
     function handleStart(e) {
         if(myRole !== 'artiest') return;
         isDrawing = true;
-        const pos = getMousePos(e);
+        const pos = getPos(e);
         [lastX, lastY] = [pos.x, pos.y];
     }
 
     function handleMove(e) {
         if(!isDrawing || myRole !== 'artiest') return;
-        const pos = getMousePos(e);
-        renderLine(lastX, lastY, pos.x, pos.y, activeColor);
-        pubnub.publish({ 
-            channel: channel, 
-            message: {type: 'draw', x1: lastX, y1: lastY, x2: pos.x, y2: pos.y, c: activeColor} 
-        });
+        const pos = getPos(e);
+        renderLine(lastX / canvas.width, lastY / canvas.height, pos.x / canvas.width, pos.y / canvas.height, activeColor);
+        sendLine(lastX, lastY, pos.x, pos.y, activeColor);
         [lastX, lastY] = [pos.x, pos.y];
     }
 
-    function getMousePos(e) {
+    function getPos(e) {
         const rect = canvas.getBoundingClientRect();
         const ev = e.touches ? e.touches[0] : e;
-        return { 
-            x: (ev.clientX - rect.left) * (canvas.width / rect.width), 
-            y: (ev.clientY - rect.top) * (canvas.height / rect.height)
-        };
+        return { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+    }
+
+    function selColor(c, el) {
+        activeColor = c;
+        document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    function clearAll() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        pubnub.publish({ channel: channel, message: {type: 'clear'} });
     }
 
     canvas.addEventListener('mousedown', handleStart);
     canvas.addEventListener('mousemove', handleMove);
     window.addEventListener('mouseup', () => isDrawing = false);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(e); }, {passive: false});
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); }, {passive: false});
+    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handleStart(e); });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handleMove(e); });
     canvas.addEventListener('touchend', () => isDrawing = false);
-    window.addEventListener('resize', initCanvas);
+    window.addEventListener('resize', resizeCanvas);
 </script>
 </body>
 </html>
