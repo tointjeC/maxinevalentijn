@@ -3,220 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <title>🎨 Art Studio: Live Pictionary ❤️</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
     <style>
-        :root { 
-            --deep-teal: #006d77; 
-            --soft-pink: #ffafcc;
-            --bg: #f8f9fa;
-        }
-        body { 
-            background: var(--bg); 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            margin: 0; padding: 10px; color: #333;
-            text-align: center;
-        }
-        .container { 
-            max-width: 950px; margin: 0 auto; background: white; 
-            padding: 20px; border-radius: 30px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
-        }
-
-        .setup-box {
-            background: #e9f5f5; padding: 15px; border-radius: 20px;
-            border: 2px solid var(--deep-teal); margin-bottom: 15px;
-        }
-        input[type="text"] { padding: 12px; border-radius: 50px; border: 1px solid #ccc; width: 220px; text-align: center; outline: none; font-size: 16px; }
-
-        .toolbar { 
-            display: flex; justify-content: center; gap: 10px; 
-            margin-bottom: 15px; flex-wrap: wrap; 
-        }
-        
-        canvas { 
-            background: #fff; border: 4px solid var(--deep-teal); 
-            border-radius: 15px; cursor: crosshair; touch-action: none;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-            width: 100%; max-width: 800px; height: auto;
-        }
-
-        .controls-row { 
-            display: flex; justify-content: center; align-items: center; 
-            gap: 20px; margin-top: 15px; flex-wrap: wrap;
-        }
-        
-        .color-picker { 
-            display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; 
-            padding: 10px; background: #ececec; border-radius: 15px;
-        }
-
-        .color-btn { 
-            width: 30px; height: 30px; border-radius: 50%; 
-            border: 2px solid white; cursor: pointer; transition: 0.2s;
-        }
-        .color-btn.active { border: 2px solid var(--deep-teal); transform: scale(1.1); }
-
-        .btn { 
-            padding: 12px 25px; border: none; border-radius: 50px; 
-            cursor: pointer; font-weight: bold; transition: 0.3s;
-        }
-        .btn-main { background: var(--deep-teal); color: white; }
-        .btn-clear { background: #ff4d6d; color: white; }
-        
-        #secret-box { 
-            background: #fff0f3; border: 2px dashed #ff4d6d;
-            padding: 15px; border-radius: 15px; margin-bottom: 15px;
-        }
+        :root { --deep-teal: #006d77; --bg: #f8f9fa; }
+        body { background: var(--bg); font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        canvas { background: white; border: 3px solid var(--deep-teal); border-radius: 10px; width: 100%; max-width: 600px; touch-action: none; cursor: crosshair; }
+        .setup-box { background: #e9f5f5; padding: 20px; border-radius: 15px; border: 2px solid var(--deep-teal); }
+        input { padding: 12px; border-radius: 25px; border: 1px solid #ccc; width: 200px; margin-bottom: 10px; font-size: 16px; text-align: center; }
+        .btn { padding: 12px 25px; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; background: var(--deep-teal); color: white; margin: 5px; }
         .hidden { display: none; }
-        .online-tag { color: #2a9d8f; font-weight: bold; font-size: 14px; margin-bottom: 10px; display: block; }
+        .color-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; display: inline-block; cursor: pointer; }
+        #secret-box { background: #fff0f3; border: 2px dashed #ff4d6d; padding: 15px; border-radius: 15px; margin: 15px 0; }
+        .status-dot { height: 10px; width: 10px; background-color: #bbb; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .online { background-color: #2a9d8f; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h1>🎨 Live Art Studio</h1>
-    
+
     <div id="setup-area" class="setup-box">
-        <p>Voer jullie geheime kamercode in:</p>
-        <input type="text" id="room-id" placeholder="bijv: antmax2026">
-        <br><br>
-        <button class="btn btn-main" onclick="startLive()">Start Studio</button>
+        <p>Voer jullie kamercode in:</p>
+        <input type="text" id="room-id" placeholder="bijv: antoinemaxine">
+        <br>
+        <button class="btn" onclick="connect()">Start Studio</button>
     </div>
 
     <div id="game-area" class="hidden">
-        <span id="status" class="online-tag">Verbinding zoeken...</span>
+        <p><span id="status-dot" class="status-dot"></span> <span id="status-text">Verbinden...</span></p>
         
-        <div class="toolbar">
-            <button id="role-gids" class="btn btn-main" onclick="selectRole('gids')">👤 Ik ben de Gids</button>
-            <button id="role-schilder" class="btn btn-main" onclick="selectRole('schilder')">🖌️ Ik ben de Schilder</button>
-            <button class="btn btn-clear" onclick="requestClear()">🗑️ Wis bord</button>
+        <div id="role-selection">
+            <button class="btn" onclick="setRole('gids')">👤 Ik ben de Gids</button>
+            <button class="btn" onclick="setRole('schilder')">🖌️ Ik ben de Schilder</button>
         </div>
 
         <div id="secret-box" class="hidden">
-            <p style="margin:0; font-size: 14px; color: #ff4d6d; font-weight: bold;">GEHEIM VOOR DE GIDS:</p>
-            <h2 id="assignment" style="color: var(--deep-teal); margin: 10px 0;">...</h2>
-            <button class="btn btn-main" style="font-size: 11px; padding: 5px 15px;" onclick="newAssignment()">🔄 Volgende opdracht</button>
+            <p>Opdracht voor de gids:</p>
+            <h2 id="assignment">...</h2>
+            <button class="btn" style="font-size: 12px;" onclick="sendNewAssignment()">🔄 Volgende</button>
         </div>
 
-        <canvas id="canvas" width="800" height="500"></canvas>
+        <canvas id="canvas" width="600" height="500"></canvas>
 
-        <div id="painter-controls" class="controls-row hidden">
-            <div class="color-picker">
-                <div class="color-btn active" style="background: #000000;" onclick="setColor('#000000', this)"></div>
-                <div class="color-btn" style="background: #ff4d6d;" onclick="setColor('#ff4d6d', this)"></div>
-                <div class="color-btn" style="background: #3a86ff;" onclick="setColor('#3a86ff', this)"></div>
-                <div class="color-btn" style="background: #38b000;" onclick="setColor('#38b000', this)"></div>
-                <div class="color-btn" style="background: #ffbe0b;" onclick="setColor('#ffbe0b', this)"></div>
-                <div class="color-btn" style="background: #ffffff; border: 1px solid #ccc;" onclick="setColor('#ffffff', this)">🧽</div>
+        <div id="controls" class="hidden">
+            <div style="margin: 10px 0;">
+                <div class="color-btn" style="background: #000;" onclick="setColor('#000')"></div>
+                <div class="color-btn" style="background: #ff4d6d;" onclick="setColor('#ff4d6d')"></div>
+                <div class="color-btn" style="background: #3a86ff;" onclick="setColor('#3a86ff')"></div>
+                <div class="color-btn" style="background: #38b000;" onclick="setColor('#38b000')"></div>
+                <button class="btn" style="background: #eee; color: #333; padding: 5px 10px;" onclick="requestClear()">🗑️ Wis</button>
             </div>
-            <input type="range" id="sizeRange" min="2" max="40" value="6" oninput="setSize(this.value)">
         </div>
     </div>
 </div>
 
 <script>
+    let client, topic, myRole = '', painting = false;
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    
-    // De 100+ zinnen (ingekort voor de code, voeg je eigen lijst hier weer aan toe!)
-    const assignments = ["Een pinguïn met een hartjes-ballon", "Een olifant op een skateboard", "Een pizza ster", "Een dansende banaan", "Antoine en Maxine hand in hand", "Een gitaar met vleugels", "Een luiaard op een regenboog", "Een schatkaart naar Maxine haar hart", "Een kat met een zonnebril", "Een kopje koffie met hartjesstoom"];
+    const assignments = ["Een pinguïn met een hartjes-ballon", "Een pizza ster", "Een dansende banaan", "Antoine en Maxine hand in hand", "Een gitaar met vleugels", "Een luiaard op een regenboog", "Een kat met een zonnebril", "Een kopje koffie met hartjesstoom"];
 
-    let peer, conn;
-    let painting = false;
-    let myRole = ''; 
-    let currentColor = '#000000';
-    let currentSize = 6;
-
-    // Belangrijk: STUN servers helpen bij het vinden van apparaten op verschillende netwerken
-    const peerConfig = {
-        config: {
-            'iceServers': [
-                { url: 'stun:stun.l.google.com:19302' },
-                { url: 'stun:stun1.l.google.com:19302' }
-            ]
-        }
-    };
-
-    function startLive() {
-        const id = document.getElementById('room-id').value.toLowerCase().trim();
-        if(!id) return alert("Voer een code in!");
+    function connect() {
+        const roomId = document.getElementById('room-id').value.toLowerCase().trim();
+        if (!roomId) return alert("Kies een code!");
         
-        const finalId = 'art-date-26-' + id;
-        
-        // Probeer eerst host te zijn
-        peer = new Peer(finalId, peerConfig);
+        topic = 'artdate2026/' + roomId;
+        // We gebruiken een publieke broker die altijd bereikbaar is via websockets
+        client = mqtt.connect('wss://broker.hivemq.com:8000/mqtt');
 
-        peer.on('open', () => {
+        client.on('connect', () => {
+            client.subscribe(topic);
             document.getElementById('setup-area').classList.add('hidden');
             document.getElementById('game-area').classList.remove('hidden');
-            document.getElementById('status').innerText = "Wachten op verbinding...";
+            document.getElementById('status-dot').classList.add('online');
+            document.getElementById('status-text').innerText = "Live verbinding actief!";
         });
 
-        peer.on('connection', (connection) => {
-            conn = connection;
-            handleConnection();
-        });
-
-        peer.on('error', (err) => {
-            if (err.type === 'unavailable-id') {
-                // Als de ID bezet is, proberen we te verbinden met die ID
-                peer.destroy();
-                connectAsGuest(finalId);
-            } else {
-                console.error(err);
-                document.getElementById('status').innerText = "Fout: " + err.type;
-            }
+        client.on('message', (t, message) => {
+            const data = JSON.parse(message.toString());
+            if (data.type === 'draw') renderLine(data);
+            if (data.type === 'clear') ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (data.type === 'new_task') document.getElementById('assignment').innerText = data.text;
         });
     }
 
-    function connectAsGuest(hostId) {
-        peer = new Peer(null, peerConfig);
-        peer.on('open', () => {
-            conn = peer.connect(hostId, { reliable: true });
-            handleConnection();
-            document.getElementById('setup-area').classList.add('hidden');
-            document.getElementById('game-area').classList.remove('hidden');
-        });
-    }
-
-    function handleConnection() {
-        conn.on('open', () => {
-            document.getElementById('status').innerText = "💖 Verbonden! Kies je rol.";
-        });
-
-        conn.on('data', (data) => {
-            if(data.type === 'draw') renderLine(data);
-            if(data.type === 'clear') ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(data.type === 'assignment') document.getElementById('assignment').innerText = data.text;
-        });
-
-        conn.on('close', () => {
-            document.getElementById('status').innerText = "❌ Verbinding verbroken.";
-        });
-    }
-
-    function selectRole(role) {
+    function setRole(role) {
         myRole = role;
-        document.getElementById('role-gids').style.opacity = (role === 'gids' ? '1' : '0.5');
-        document.getElementById('role-schilder').style.opacity = (role === 'schilder' ? '1' : '0.5');
+        document.getElementById('role-selection').classList.add('hidden');
+        document.getElementById('controls').classList.toggle('hidden', role !== 'schilder');
         document.getElementById('secret-box').classList.toggle('hidden', role !== 'gids');
-        document.getElementById('painter-controls').classList.toggle('hidden', role !== 'schilder');
-        if(role === 'gids') newAssignment();
+        if(role === 'gids') sendNewAssignment();
     }
 
-    function newAssignment() {
+    function sendNewAssignment() {
         const text = assignments[Math.floor(Math.random() * assignments.length)];
-        document.getElementById('assignment').innerText = text;
-        if(conn && conn.open) conn.send({ type: 'assignment', text: text });
+        client.publish(topic, JSON.stringify({ type: 'new_task', text: text }));
     }
 
-    function setColor(c, btn) {
-        currentColor = c;
-        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    }
-
-    function setSize(s) { currentSize = s; }
+    function setColor(c) { ctx.strokeStyle = c; }
+    function requestClear() { client.publish(topic, JSON.stringify({ type: 'clear' })); }
 
     function getPos(e) {
         const rect = canvas.getBoundingClientRect();
@@ -228,24 +115,31 @@
         };
     }
 
-    function startDraw(e) {
-        if(myRole !== 'schilder') return;
-        painting = true;
-        draw(e);
-    }
+    canvas.addEventListener('mousedown', (e) => { if(myRole==='schilder') painting = true; });
+    canvas.addEventListener('touchstart', (e) => { if(myRole==='schilder') { e.preventDefault(); painting = true; }});
 
-    function stopDraw() { painting = false; ctx.beginPath(); }
-
-    function draw(e) {
-        if(!painting || myRole !== 'schilder') return;
+    canvas.addEventListener('mousemove', (e) => {
+        if (!painting) return;
         const pos = getPos(e);
-        const drawData = { type: 'draw', x: pos.x, y: pos.y, color: currentColor, size: currentSize };
+        const drawData = { type: 'draw', x: pos.x, y: pos.y, color: ctx.strokeStyle, isNew: false };
         renderLine(drawData);
-        if(conn && conn.open) conn.send(drawData);
-    }
+        client.publish(topic, JSON.stringify(drawData));
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (!painting) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        const drawData = { type: 'draw', x: pos.x, y: pos.y, color: ctx.strokeStyle };
+        renderLine(drawData);
+        client.publish(topic, JSON.stringify(drawData));
+    });
+
+    window.addEventListener('mouseup', () => { painting = false; ctx.beginPath(); });
+    window.addEventListener('touchend', () => { painting = false; ctx.beginPath(); });
 
     function renderLine(data) {
-        ctx.lineWidth = data.size;
+        ctx.lineWidth = 5;
         ctx.lineCap = 'round';
         ctx.strokeStyle = data.color;
         ctx.lineTo(data.x, data.y);
@@ -253,18 +147,6 @@
         ctx.beginPath();
         ctx.moveTo(data.x, data.y);
     }
-
-    function requestClear() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if(conn && conn.open) conn.send({ type: 'clear' });
-    }
-
-    canvas.addEventListener('mousedown', startDraw);
-    canvas.addEventListener('mousemove', draw);
-    window.addEventListener('mouseup', stopDraw);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e); });
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
-    canvas.addEventListener('touchend', stopDraw);
 </script>
 </body>
 </html>
