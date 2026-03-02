@@ -17,18 +17,13 @@
             background-image: radial-gradient(#ffc8dd 1px, transparent 1px);
             background-size: 20px 20px;
             margin: 0; padding: 20px; color: #4a4a4a;
+            overflow-x: hidden;
         }
 
-        h1 { 
-            color: var(--dark-pink); 
-            text-shadow: 2px 2px white; 
-            font-size: 3rem;
-            margin-bottom: 10px;
-        }
+        .container { max-width: 1100px; margin: 0 auto; text-align: center; }
 
-        .container { max-width: 1100px; margin: 0 auto; }
+        h1 { color: var(--dark-pink); text-shadow: 2px 2px white; font-size: 2.5rem; margin-bottom: 10px; }
 
-        /* Romantisch Menu */
         .menu { 
             background: white; padding: 20px; border-radius: 25px; 
             box-shadow: 0 10px 25px rgba(255, 175, 204, 0.4);
@@ -37,71 +32,54 @@
 
         button { 
             background: var(--primary-pink); color: white; border: none; 
-            padding: 12px 25px; border-radius: 50px; cursor: pointer; 
-            font-weight: bold; font-size: 16px; margin: 5px; 
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 4px 0px #eb8ba9;
+            padding: 12px 20px; border-radius: 50px; cursor: pointer; 
+            font-weight: bold; margin: 5px; transition: 0.3s;
         }
 
-        button:hover { transform: translateY(-3px); box-shadow: 0 7px 0px #eb8ba9; background: #ff99bb; }
-        button:active { transform: translateY(0px); box-shadow: 0 2px 0px #eb8ba9; }
-        button.active { background: var(--dark-pink); box-shadow: 0 4px 0px #c91850; }
+        button.active { background: var(--dark-pink); }
 
-        /* Gekozen kaart display */
         #my-pick { 
-            background: white; padding: 15px 30px; border-radius: 50px;
+            background: white; padding: 10px 25px; border-radius: 50px;
             display: inline-flex; align-items: center; gap: 15px;
             border: 3px solid var(--dark-pink); margin-bottom: 20px;
             animation: heartBeat 2s infinite;
         }
-        @keyframes heartBeat {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.03); }
-            100% { transform: scale(1); }
-        }
-        #picked-img { height: 50px; border-radius: 10px; }
 
-        /* Het Speelbord */
+        @keyframes heartBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+
+        #picked-img { height: 60px; width: 60px; object-fit: contain; }
+
         #board { 
             display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
-            gap: 20px; margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
+            gap: 15px; 
         }
 
         .card { 
             background: white; border-radius: 15px; padding: 15px;
             cursor: pointer; transition: all 0.4s ease; 
-            position: relative; border: 2px solid #ffdeeb;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            perspective: 1000px;
+            border: 2px solid #ffdeeb; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
 
-        .card:hover { transform: translateY(-5px) rotate(2deg); border-color: var(--primary-pink); }
+        .card:hover { transform: translateY(-5px); border-color: var(--primary-pink); }
 
-        .card img { width: 100%; height: 90px; object-fit: contain; margin-bottom: 10px; }
-        .card p { margin: 0; font-weight: bold; font-size: 15px; color: #666; }
-
-        /* Weggestreept: kaart klapt weg */
+        .card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }
+        
         .card.eliminated { 
-            opacity: 0.3; transform: rotateX(70deg); 
-            filter: grayscale(80%) sepia(50%);
-            pointer-events: auto;
-        }
-        .card.eliminated::after {
-            content: "❤️"; position: absolute; top: 10px; right: 10px; font-size: 20px;
+            opacity: 0.2; transform: scale(0.8) rotateX(40deg); 
+            filter: grayscale(100%);
         }
 
         .hidden { display: none; }
 
-        /* Kleine hartjes versiering */
         .floating-heart {
             position: fixed; color: var(--primary-pink);
             pointer-events: none; animation: floatUp 4s linear infinite;
-            z-index: -1; opacity: 0.6;
+            z-index: -1; opacity: 0.5;
         }
         @keyframes floatUp {
-            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+            0% { transform: translateY(110vh); opacity: 1; }
+            100% { transform: translateY(-10vh); opacity: 0; }
         }
     </style>
 </head>
@@ -111,111 +89,114 @@
         <h1>Wie is het? ❤️</h1>
 
         <div class="menu">
-            <div style="margin-bottom: 15px;">
-                <button onclick="changeTheme('mensen')" id="btn-mensen" class="active">👥 Mensen</button>
-                <button onclick="changeTheme('dieren')" id="btn-dieren">🐾 Dieren</button>
-                <button onclick="changeTheme('voorwerpen')" id="btn-voorwerpen">🎁 Voorwerpen</button>
-            </div>
-            <button onclick="resetGame()" style="background: var(--soft-blue); box-shadow: 0 4px 0px #76b1e6;">🔄 Nieuw Spel</button>
+            <button onclick="changeTheme('mensen')" id="btn-mensen" class="active">👥 Mensen</button>
+            <button onclick="changeTheme('dieren')" id="btn-dieren">🐾 Dieren</button>
+            <button onclick="changeTheme('voorwerpen')" id="btn-voorwerpen">🎁 Voorwerpen</button>
+            <br><br>
+            <button onclick="resetGame()" style="background: var(--soft-blue);">🔄 Nieuw Spel / Reset</button>
+            <button onclick="window.location.href='index.html'" style="background: #aaa;">🏠 Terug naar Game</button>
         </div>
 
         <div id="selection-screen">
-            <h2 style="color: var(--dark-pink)">Kies eerst je geheime figuurtje...</h2>
+            <h2 style="color: var(--dark-pink)">Stap 1: Klik op het plaatje dat JIJ bent</h2>
         </div>
 
         <div id="game-screen" class="hidden">
             <div id="my-pick">
-                <span>Jij bent de <strong><span id="picked-name">...</span></strong></span>
+                <span>Jij bent: <strong><span id="picked-name">...</span></strong></span>
                 <img id="picked-img" src="" alt="">
             </div>
-            <h2 style="color: #888; font-size: 1.2rem;">Klik op de plaatjes om ze weg te strepen!</h2>
+            <h2 style="color: #888;">Stap 2: Stel vragen en klik kaartjes weg!</h2>
         </div>
 
         <div id="board"></div>
     </div>
 
 <script>
+    // We gebruiken een stabiele CDN voor de plaatjes (Twemoji)
+    const getImg = (code) => `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/${code}.png`;
+
     const themes = {
         mensen: [
-            { name: "Kok", img: "https://openmoji.org/data/color/svg/1F468-200D-1F373.svg" },
-            { name: "Astronaut", img: "https://openmoji.org/data/color/svg/1F468-200D-1F680.svg" },
-            { name: "Politie", img: "https://openmoji.org/data/color/svg/1F46E.svg" },
-            { name: "Dokter", img: "https://openmoji.org/data/color/svg/1F468-200D-2695.svg" },
-            { name: "Piraat", img: "https://openmoji.org/data/color/svg/1F3F4-200D-2620.svg" },
-            { name: "Prinses", img: "https://openmoji.org/data/color/svg/1F478.svg" },
-            { name: "Ninja", img: "https://openmoji.org/data/color/svg/1F7F0.svg" },
-            { name: "Clown", img: "https://openmoji.org/data/color/svg/1F921.svg" },
-            { name: "Detective", img: "https://openmoji.org/data/color/svg/1F575.svg" },
-            { name: "Boer", img: "https://openmoji.org/data/color/svg/1F468-200D-1F33E.svg" },
-            { name: "Zanger", img: "https://openmoji.org/data/color/svg/1F468-200D-1F3A4.svg" },
-            { name: "Leraar", img: "https://openmoji.org/data/color/svg/1F468-200D-1F3EB.svg" },
-            { name: "Brandweer", img: "https://openmoji.org/data/color/svg/1F468-200D-1F692.svg" },
-            { name: "Oma", img: "https://openmoji.org/data/color/svg/1F475.svg" },
-            { name: "Baby", img: "https://openmoji.org/data/color/svg/1F476.svg" },
-            { name: "Elf", img: "https://openmoji.org/data/color/svg/1F9DD.svg" },
-            { name: "Zombie", img: "https://openmoji.org/data/color/svg/1F9DF.svg" },
-            { name: "Vampier", img: "https://openmoji.org/data/color/svg/1F9DB.svg" },
-            { name: "Schilder", img: "https://openmoji.org/data/color/svg/1F468-200D-1F3A8.svg" },
-            { name: "Piloot", img: "https://openmoji.org/data/color/svg/1F468-200D-2708.svg" },
-            { name: "Rechter", img: "https://openmoji.org/data/color/svg/1F468-200D-2696.svg" },
-            { name: "Monteur", img: "https://openmoji.org/data/color/svg/1F468-200D-1F527.svg" },
-            { name: "Koning", img: "https://openmoji.org/data/color/svg/1F934.svg" },
-            { name: "Superheld", img: "https://openmoji.org/data/color/svg/1F9B8.svg" },
-            { name: "Dwerg", img: "https://openmoji.org/data/color/svg/1F9D4.svg" }
+            { name: "Kok", img: getImg("1f468-200d-1f373") },
+            { name: "Astronaut", img: getImg("1f468-200d-1f680") },
+            { name: "Politie", img: getImg("1f46e") },
+            { name: "Dokter", img: getImg("1f468-200d-2695") },
+            { name: "Piraat", img: getImg("1f3f4-200d-2620") },
+            { name: "Prinses", img: getImg("1f478") },
+            { name: "Ninja", img: getImg("1f7f0") },
+            { name: "Clown", img: getImg("1f921") },
+            { name: "Detective", img: getImg("1f575") },
+            { name: "Boer", img: getImg("1f468-200d-1f33e") },
+            { name: "Zanger", img: getImg("1f468-200d-1f3a4") },
+            { name: "Leraar", img: getImg("1f468-200d-1f3eb") },
+            { name: "Brandweer", img: getImg("1f468-200d-1f692") },
+            { name: "Oma", img: getImg("1f475") },
+            { name: "Baby", img: getImg("1f476") },
+            { name: "Elf", img: getImg("1f9dd") },
+            { name: "Zombie", img: getImg("1f9df") },
+            { name: "Vampier", img: getImg("1f9db") },
+            { name: "Schilder", img: getImg("1f468-200d-1f3a8") },
+            { name: "Piloot", img: getImg("1f468-200d-2708") },
+            { name: "Rechter", img: getImg("1f468-200d-2696") },
+            { name: "Monteur", img: getImg("1f468-200d-1f527") },
+            { name: "Koning", img: getImg("1f451") },
+            { name: "Superheld", img: getImg("1f9b8") },
+            { name: "Dwerg", img: getImg("1f9d4") }
         ],
         dieren: [
-            { name: "Leeuw", img: "https://openmoji.org/data/color/svg/1F981.svg" },
-            { name: "Pinguïn", img: "https://openmoji.org/data/color/svg/1F427.svg" },
-            { name: "Kikker", img: "https://openmoji.org/data/color/svg/1F438.svg" },
-            { name: "Hond", img: "https://openmoji.org/data/color/svg/1F415.svg" },
-            { name: "Kat", img: "https://openmoji.org/data/color/svg/1F408.svg" },
-            { name: "Varken", img: "https://openmoji.org/data/color/svg/1F416.svg" },
-            { name: "Aap", img: "https://openmoji.org/data/color/svg/1F412.svg" },
-            { name: "Kip", img: "https://openmoji.org/data/color/svg/1F413.svg" },
-            { name: "Olifant", img: "https://openmoji.org/data/color/svg/1F418.svg" },
-            { name: "Giraffe", img: "https://openmoji.org/data/color/svg/1F92D.svg" },
-            { name: "Panda", img: "https://openmoji.org/data/color/svg/1F43C.svg" },
-            { name: "Haai", img: "https://openmoji.org/data/color/svg/1F988.svg" },
-            { name: "Slang", img: "https://openmoji.org/data/color/svg/1F40D.svg" },
-            { name: "Bij", img: "https://openmoji.org/data/color/svg/1F41D.svg" },
-            { name: "Vlinder", img: "https://openmoji.org/data/color/svg/1F98B.svg" },
-            { name: "Walvis", img: "https://openmoji.org/data/color/svg/1F433.svg" },
-            { name: "Schildpad", img: "https://openmoji.org/data/color/svg/1F422.svg" },
-            { name: "Konijn", img: "https://openmoji.org/data/color/svg/1F407.svg" },
-            { name: "Tijger", img: "https://openmoji.org/data/color/svg/1F405.svg" },
-            { name: "Uil", img: "https://openmoji.org/data/color/svg/1F989.svg" },
-            { name: "Krokodil", img: "https://openmoji.org/data/color/svg/1F40A.svg" },
-            { name: "Kameleon", img: "https://openmoji.org/data/color/svg/1F98E.svg" },
-            { name: "Octopus", img: "https://openmoji.org/data/color/svg/1F419.svg" },
-            { name: "Paard", img: "https://openmoji.org/data/color/svg/1F40E.svg" },
-            { name: "Flamingo", img: "https://openmoji.org/data/color/svg/1F9A9.svg" }
+            { name: "Leeuw", img: getImg("1f981") },
+            { name: "Pinguïn", img: getImg("1f427") },
+            { name: "Kikker", img: getImg("1f438") },
+            { name: "Hond", img: getImg("1f415") },
+            { name: "Kat", img: getImg("1f408") },
+            { name: "Varken", img: getImg("1f416") },
+            { name: "Aap", img: getImg("1f412") },
+            { name: "Kip", img: getImg("1f413") },
+            { name: "Olifant", img: getImg("1f418") },
+            { name: "Giraffe", img: getImg("1f992") },
+            { name: "Panda", img: getImg("1f43c") },
+            { name: "Haai", img: getImg("1f988") },
+            { name: "Slang", img: getImg("1f40d") },
+            { name: "Bij", img: getImg("1f41d") },
+            { name: "Vlinder", img: getImg("1f98b") },
+            { name: "Walvis", img: getImg("1f433") },
+            { name: "Schildpad", img: getImg("1f422") },
+            { name: "Konijn", img: getImg("1f407") },
+            { name: "Tijger", img: getImg("1f405") },
+            { name: "Uil", img: getImg("1f989") },
+            { name: "Krokodil", img: getImg("1f40a") },
+            { name: "Kameleon", img: getImg("1f98e") },
+            { name: "Octopus", img: getImg("1f419") },
+            { name: "Paard", img: getImg("1f40e") },
+            { name: "Flamingo", img: getImg("1f9a9") }
         ],
         voorwerpen: [
-            { name: "Gitaar", img: "https://openmoji.org/data/color/svg/1F3B8.svg" },
-            { name: "Telefoon", img: "https://openmoji.org/data/color/svg/1F4F1.svg" },
-            { name: "Pizza", img: "https://openmoji.org/data/color/svg/1F355.svg" },
-            { name: "Auto", img: "https://openmoji.org/data/color/svg/1F697.svg" },
-            { name: "Sleutel", img: "https://openmoji.org/data/color/svg/1F511.svg" },
-            { name: "Cadeau", img: "https://openmoji.org/data/color/svg/1F381.svg" },
-            { name: "Bril", img: "https://openmoji.org/data/color/svg/1F453.svg" },
-            { name: "Voetbal", img: "https://openmoji.org/data/color/svg/26BD.svg" },
-            { name: "Paraplu", img: "https://openmoji.org/data/color/svg/2602.svg" },
-            { name: "Rugzak", img: "https://openmoji.org/data/color/svg/1F392.svg" },
-            { name: "Horloge", img: "https://openmoji.org/data/color/svg/231A.svg" },
-            { name: "Laptop", img: "https://openmoji.org/data/color/svg/1F4BB.svg" },
-            { name: "Lamp", img: "https://openmoji.org/data/color/svg/1F4A1.svg" },
-            { name: "Koffie", img: "https://openmoji.org/data/color/svg/2615.svg" },
-            { name: "Ijsje", img: "https://openmoji.org/data/color/svg/1F366.svg" },
-            { name: "Vliegtuig", img: "https://openmoji.org/data/color/svg/2708.svg" },
-            { name: "Fiets", img: "https://openmoji.org/data/color/svg/1F6B2.svg" },
-            { name: "Boek", img: "https://openmoji.org/data/color/svg/1F4D6.svg" },
-            { name: "Trommel", img: "https://openmoji.org/data/color/svg/1F941.svg" },
-            { name: "Zonnebril", img: "https://openmoji.org/data/color/svg/1F576.svg" },
-            { name: "Schoen", img: "https://openmoji.org/data/color/svg/1F45F.svg" },
-            { name: "Kaars", img: "https://openmoji.org/data/color/svg/1F56F.svg" },
-            { name: "Verrekijker", img: "https://openmoji.org/data/color/svg/1F50D.svg" },
-            { name: "Hamer", img: "https://openmoji.org/data/color/svg/1F528.svg" },
-            { name: "Diamant", img: "https://openmoji.org/data/color/svg/1F48E.svg" }
+            { name: "Gitaar", img: getImg("1f3b8") },
+            { name: "Telefoon", img: getImg("1f4f1") },
+            { name: "Pizza", img: getImg("1f355") },
+            { name: "Auto", img: getImg("1f697") },
+            { name: "Sleutel", img: getImg("1f511") },
+            { name: "Cadeau", img: getImg("1f381") },
+            { name: "Bril", img: getImg("1f453") },
+            { name: "Voetbal", img: getImg("26bd") },
+            { name: "Paraplu", img: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/2602.png" },
+            { name: "Rugzak", img: getImg("1f392") },
+            { name: "Horloge", img: getImg("231a") },
+            { name: "Laptop", img: getImg("1f4bb") },
+            { name: "Lamp", img: getImg("1f4a1") },
+            { name: "Koffie", img: getImg("2615") },
+            { name: "Ijsje", img: getImg("1f366") },
+            { name: "Vliegtuig", img: getImg("2708") },
+            { name: "Fiets", img: getImg("1f6b2") },
+            { name: "Boek", img: getImg("1f4d6") },
+            { name: "Trommel", img: getImg("1f941") },
+            { name: "Zonnebril", img: getImg("1f576") },
+            { name: "Schoen", img: getImg("1f45f") },
+            { name: "Kaars", img: getImg("1f56f") },
+            { name: "Verrekijker", img: getImg("1f50d") },
+            { name: "Hamer", img: getImg("1f528") },
+            { name: "Diamant", img: getImg("1f48e") }
         ]
     };
 
@@ -225,7 +206,7 @@
     function renderBoard() {
         const board = document.getElementById('board');
         board.innerHTML = '';
-        const items = [...themes[currentTheme]].sort(() => Math.random() - 0.5);
+        const items = [...themes[currentTheme]];
 
         items.forEach((item) => {
             const card = document.createElement('div');
@@ -274,7 +255,7 @@
             heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
             document.body.appendChild(heart);
             setTimeout(() => heart.remove(), 4000);
-        }, 600);
+        }, 800);
     }
 
     renderBoard();
