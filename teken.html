@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>🎨 Art Studio: Live Pictionary!❤️</title>
+    <title>🎨 Art Studio: Live Pictionary ❤️</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root { 
@@ -26,7 +26,7 @@
             background: #e9f5f5; padding: 15px; border-radius: 20px;
             border: 2px solid var(--deep-teal); margin-bottom: 15px;
         }
-        input[type="text"] { padding: 10px; border-radius: 50px; border: 1px solid #ccc; width: 220px; text-align: center; outline: none; }
+        input[type="text"] { padding: 12px; border-radius: 50px; border: 1px solid #ccc; width: 220px; text-align: center; outline: none; font-size: 16px; }
 
         .toolbar { 
             display: flex; justify-content: center; gap: 10px; 
@@ -53,12 +53,11 @@
         .color-btn { 
             width: 30px; height: 30px; border-radius: 50%; 
             border: 2px solid white; cursor: pointer; transition: 0.2s;
-            display: flex; align-items: center; justify-content: center; font-size: 12px;
         }
         .color-btn.active { border: 2px solid var(--deep-teal); transform: scale(1.1); }
 
         .btn { 
-            padding: 10px 20px; border: none; border-radius: 50px; 
+            padding: 12px 25px; border: none; border-radius: 50px; 
             cursor: pointer; font-weight: bold; transition: 0.3s;
         }
         .btn-main { background: var(--deep-teal); color: white; }
@@ -78,13 +77,14 @@
     <h1>🎨 Live Art Studio</h1>
     
     <div id="setup-area" class="setup-box">
-        <p>Voer de kamercode in die jullie hebben afgesproken:</p>
-        <input type="text" id="room-id" placeholder="bijv: onze-date">
-        <button class="btn btn-main" onclick="startLive()">Verbinden</button>
+        <p>Voer jullie geheime kamercode in:</p>
+        <input type="text" id="room-id" placeholder="bijv: antmax2026">
+        <br><br>
+        <button class="btn btn-main" onclick="startLive()">Start Studio</button>
     </div>
 
     <div id="game-area" class="hidden">
-        <span id="status" class="online-tag">Initialiseren...</span>
+        <span id="status" class="online-tag">Verbinding zoeken...</span>
         
         <div class="toolbar">
             <button id="role-gids" class="btn btn-main" onclick="selectRole('gids')">👤 Ik ben de Gids</button>
@@ -93,7 +93,7 @@
         </div>
 
         <div id="secret-box" class="hidden">
-            <p style="margin:0; font-size: 14px; color: #ff4d6d; font-weight: bold;">GEHEIM:</p>
+            <p style="margin:0; font-size: 14px; color: #ff4d6d; font-weight: bold;">GEHEIM VOOR DE GIDS:</p>
             <h2 id="assignment" style="color: var(--deep-teal); margin: 10px 0;">...</h2>
             <button class="btn btn-main" style="font-size: 11px; padding: 5px 15px;" onclick="newAssignment()">🔄 Volgende opdracht</button>
         </div>
@@ -117,8 +117,9 @@
 <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const assignments = ["Een pinguïn met een hartjes-ballon", "Een olifant op een roze skateboard", "Een kat die een zonnebril draagt", "Een pizza ster", "Een dansende banaan", "Een gitaar met vleugels", "Antoine en Maxine hand in hand", "Een picknick onder de boom", "Een raket naar de hartjesmaan", "Een luiaard die aan een regenboog hangt"]; 
-    // ... (denk aan je lijst van 100+, ik heb ze hier kort gehouden voor de overzichtelijkheid van de fix)
+    
+    // De 100+ zinnen (ingekort voor de code, voeg je eigen lijst hier weer aan toe!)
+    const assignments = ["Een pinguïn met een hartjes-ballon", "Een olifant op een skateboard", "Een pizza ster", "Een dansende banaan", "Antoine en Maxine hand in hand", "Een gitaar met vleugels", "Een luiaard op een regenboog", "Een schatkaart naar Maxine haar hart", "Een kat met een zonnebril", "Een kopje koffie met hartjesstoom"];
 
     let peer, conn;
     let painting = false;
@@ -126,51 +127,59 @@
     let currentColor = '#000000';
     let currentSize = 6;
 
+    // Belangrijk: STUN servers helpen bij het vinden van apparaten op verschillende netwerken
+    const peerConfig = {
+        config: {
+            'iceServers': [
+                { url: 'stun:stun.l.google.com:19302' },
+                { url: 'stun:stun1.l.google.com:19302' }
+            ]
+        }
+    };
+
     function startLive() {
         const id = document.getElementById('room-id').value.toLowerCase().trim();
-        if(!id) return alert("Kies een code!");
+        if(!id) return alert("Voer een code in!");
         
-        const finalId = 'art-love-2026-' + id;
+        const finalId = 'art-date-26-' + id;
         
-        // We proberen eerst de host te zijn
-        peer = new Peer(finalId);
+        // Probeer eerst host te zijn
+        peer = new Peer(finalId, peerConfig);
 
-        peer.on('open', (id) => {
-            console.log('Mijn ID is: ' + id);
+        peer.on('open', () => {
             document.getElementById('setup-area').classList.add('hidden');
             document.getElementById('game-area').classList.remove('hidden');
-            document.getElementById('status').innerText = "Wachten op Maxine...";
+            document.getElementById('status').innerText = "Wachten op verbinding...";
         });
 
-        // Als iemand anders al de host is, krijgen we een 'unavailable-id' fout
-        peer.on('error', (err) => {
-            if (err.type === 'unavailable-id') {
-                console.log("ID bezet, ik verbind als gast...");
-                peer.destroy(); // Stop de huidige poging
-                connectAsGuest(finalId);
-            } else {
-                alert("Fout: " + err.type);
-            }
-        });
-
-        // Als we Host zijn: luister naar Maxine die verbindt
         peer.on('connection', (connection) => {
             conn = connection;
-            setupEvents();
+            handleConnection();
+        });
+
+        peer.on('error', (err) => {
+            if (err.type === 'unavailable-id') {
+                // Als de ID bezet is, proberen we te verbinden met die ID
+                peer.destroy();
+                connectAsGuest(finalId);
+            } else {
+                console.error(err);
+                document.getElementById('status').innerText = "Fout: " + err.type;
+            }
         });
     }
 
     function connectAsGuest(hostId) {
-        peer = new Peer(); // Maak een random ID voor onszelf
+        peer = new Peer(null, peerConfig);
         peer.on('open', () => {
-            conn = peer.connect(hostId);
-            setupEvents();
+            conn = peer.connect(hostId, { reliable: true });
+            handleConnection();
             document.getElementById('setup-area').classList.add('hidden');
             document.getElementById('game-area').classList.remove('hidden');
         });
     }
 
-    function setupEvents() {
+    function handleConnection() {
         conn.on('open', () => {
             document.getElementById('status').innerText = "💖 Verbonden! Kies je rol.";
         });
@@ -180,17 +189,16 @@
             if(data.type === 'clear') ctx.clearRect(0, 0, canvas.width, canvas.height);
             if(data.type === 'assignment') document.getElementById('assignment').innerText = data.text;
         });
-        
+
         conn.on('close', () => {
             document.getElementById('status').innerText = "❌ Verbinding verbroken.";
         });
     }
 
-    // --- DE REST VAN JE LOGICA (SelectRole, Draw, etc.) BLIJFT HETZELFDE ---
     function selectRole(role) {
         myRole = role;
-        document.getElementById('role-gids').style.background = (role === 'gids' ? 'var(--deep-teal)' : '#ccc');
-        document.getElementById('role-schilder').style.background = (role === 'schilder' ? 'var(--deep-teal)' : '#ccc');
+        document.getElementById('role-gids').style.opacity = (role === 'gids' ? '1' : '0.5');
+        document.getElementById('role-schilder').style.opacity = (role === 'schilder' ? '1' : '0.5');
         document.getElementById('secret-box').classList.toggle('hidden', role !== 'gids');
         document.getElementById('painter-controls').classList.toggle('hidden', role !== 'schilder');
         if(role === 'gids') newAssignment();
@@ -258,6 +266,5 @@
     canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); });
     canvas.addEventListener('touchend', stopDraw);
 </script>
-
 </body>
 </html>
