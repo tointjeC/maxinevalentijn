@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>🎨 Art Studio: The Love Compass (150 Challenges)</title>
+    <title>🎨 Art Studio: The Love Compass (Expert Mode)</title>
     <style>
         :root { 
             --deep-teal: #006d77; 
@@ -15,7 +15,7 @@
             margin: 0; padding: 20px; color: #333;
         }
         .container { 
-            max-width: 900px; margin: 0 auto; background: white; 
+            max-width: 950px; margin: 0 auto; background: white; 
             padding: 30px; border-radius: 30px; 
             box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
             text-align: center;
@@ -35,18 +35,34 @@
             max-width: 100%;
         }
 
+        /* Kleurenpalet Styling */
         .controls-row { 
-            display: flex; justify-content: center; align-items: center; 
-            gap: 20px; margin-top: 20px; flex-wrap: wrap;
+            display: flex; justify-content: center; align-items: flex-start; 
+            gap: 30px; margin-top: 20px; flex-wrap: wrap;
         }
-        .color-picker { display: flex; gap: 8px; }
+        
+        .color-picker { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 8px; 
+            padding: 12px;
+            background: #ececec;
+            border-radius: 15px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
         .color-btn { 
-            width: 35px; height: 35px; border-radius: 50%; border: 2px solid white; 
-            cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;
-            display: flex; align-items: center; justify-content: center; font-size: 18px;
+            width: 35px; 
+            height: 35px; 
+            border-radius: 50%; 
+            border: 2px solid white; 
+            cursor: pointer; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
+            transition: 0.2s;
+            display: flex; align-items: center; justify-content: center;
         }
-        .color-btn:hover { transform: scale(1.2); }
-        .color-btn.active { border: 2px solid var(--deep-teal); transform: scale(1.1); }
+        .color-btn:hover { transform: scale(1.15); }
+        .color-btn.active { border: 2px solid var(--deep-teal); transform: scale(1.1); box-shadow: 0 0 8px rgba(0,109,119,0.3); }
 
         .btn { 
             padding: 12px 20px; border: none; border-radius: 50px; 
@@ -62,6 +78,11 @@
         }
         .instr-text { font-style: italic; color: #666; margin-bottom: 10px; }
         .hidden { display: none; }
+
+        .slider-box {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            background: #f1f1f1; padding: 15px; border-radius: 15px; min-width: 150px;
+        }
     </style>
 </head>
 <body>
@@ -83,22 +104,31 @@
     </div>
 
     <div id="paint-zone">
-        <p id="status-msg" class="instr-text">Kies je rol om te beginnen!</p>
-        <canvas id="canvas" width="750" height="500"></canvas>
+        <p id="status-msg" class="instr-text">Kies je rol om het atelier te openen!</p>
+        <canvas id="canvas" width="800" height="500"></canvas>
 
         <div id="painter-controls" class="controls-row hidden">
             <div class="color-picker">
                 <div class="color-btn active" style="background: #000000;" onclick="setColor('#000000', this)"></div>
+                <div class="color-btn" style="background: #808080;" onclick="setColor('#808080', this)"></div>
                 <div class="color-btn" style="background: #ff4d6d;" onclick="setColor('#ff4d6d', this)"></div>
-                <div class="color-btn" style="background: #3a86ff;" onclick="setColor('#3a86ff', this)"></div>
-                <div class="color-btn" style="background: #38b000;" onclick="setColor('#38b000', this)"></div>
+                <div class="color-btn" style="background: #ff85a1;" onclick="setColor('#ff85a1', this)"></div>
+                <div class="color-btn" style="background: #ffb563;" onclick="setColor('#ffb563', this)"></div>
                 <div class="color-btn" style="background: #ffbe0b;" onclick="setColor('#ffbe0b', this)"></div>
-                <div class="color-btn" style="background: #ffffff; border: 1px solid #ddd;" onclick="setColor('#ffffff', this)" title="Gum">🧽</div>
+                <div class="color-btn" style="background: #ffd3b6;" onclick="setColor('#ffd3b6', this)"></div>
+                <div class="color-btn" style="background: #38b000;" onclick="setColor('#38b000', this)"></div>
+                <div class="color-btn" style="background: #9ef01a;" onclick="setColor('#9ef01a', this)"></div>
+                <div class="color-btn" style="background: #3a86ff;" onclick="setColor('#3a86ff', this)"></div>
+                <div class="color-btn" style="background: #00f5d4;" onclick="setColor('#00f5d4', this)"></div>
+                <div class="color-btn" style="background: #8338ec;" onclick="setColor('#8338ec', this)"></div>
+                <div class="color-btn" style="background: #462255;" onclick="setColor('#462255', this)"></div>
+                <div class="color-btn" style="background: #ffffff; border: 1px solid #ccc;" onclick="setColor('#ffffff', this)" title="Gum">🧽</div>
             </div>
             
-            <div style="display:flex; align-items:center; gap:10px;">
-                <span>Lijndikte:</span>
-                <input type="range" id="sizeRange" min="2" max="30" value="5" oninput="setSize(this.value)">
+            <div class="slider-box">
+                <span style="font-weight:bold; font-size: 14px;">Lijndikte</span>
+                <input type="range" id="sizeRange" min="2" max="40" value="6" oninput="setSize(this.value)">
+                <div id="size-preview" style="background: black; width: 6px; height: 6px; border-radius: 50%;"></div>
             </div>
         </div>
     </div>
@@ -108,7 +138,6 @@
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     
-    // DE GIGANTISCHE LIJST (150)
     const assignments = [
         "Een pinguïn met een hartjes-ballon", "Een olifant op een roze skateboard", "Een kat die een zonnebril draagt", 
         "Een hond met een feesthoedje op", "Een giraf met een hele lange sjaal", "Een hamster in een vliegende schotel", 
@@ -155,7 +184,7 @@
     let painting = false;
     let currentRole = '';
     let currentColor = '#000000';
-    let currentSize = 5;
+    let currentSize = 6;
 
     function setRole(role) {
         currentRole = role;
@@ -166,13 +195,13 @@
         if(role === 'gids') {
             secretBox.style.display = 'block';
             painterControls.classList.add('hidden');
-            statusMsg.innerText = "Geef instructies via de telefoon!";
+            statusMsg.innerText = "Leg via de telefoon uit wat de ander moet tekenen!";
             canvas.style.pointerEvents = 'none';
             newAssignment();
         } else {
             secretBox.style.display = 'none';
             painterControls.classList.remove('hidden');
-            statusMsg.innerText = "Schilder wat je hoort!";
+            statusMsg.innerText = "Pak je kwast en luister naar de aanwijzingen!";
             canvas.style.pointerEvents = 'auto';
         }
     }
@@ -186,10 +215,14 @@
         currentColor = color;
         document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        document.getElementById('size-preview').style.background = (color === '#ffffff') ? '#ddd' : color;
     }
 
     function setSize(size) {
         currentSize = size;
+        const preview = document.getElementById('size-preview');
+        preview.style.width = size + 'px';
+        preview.style.height = size + 'px';
     }
 
     function startPosition(e) {
@@ -223,7 +256,7 @@
     }
 
     function clearCanvas() {
-        if(confirm("Helemaal opnieuw beginnen?")) {
+        if(confirm("Wil je dit meesterwerk echt wissen en opnieuw beginnen?")) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     }
