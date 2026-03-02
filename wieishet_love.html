@@ -2,7 +2,8 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>🕵️‍♀️ Wie is het? - Special Edition ❤️</title>
+    <title>🕵️‍♀️ Wie is het? - Live ❤️</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         :root {
             --primary-pink: #ffafcc;
@@ -17,13 +18,26 @@
             background-image: radial-gradient(#ffc8dd 1px, transparent 1px);
             background-size: 20px 20px;
             margin: 0; padding: 20px; color: #4a4a4a;
-            overflow-x: hidden;
+            text-align: center;
         }
 
-        .container { max-width: 1100px; margin: 0 auto; text-align: center; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        h1 { color: var(--dark-pink); text-shadow: 2px 2px white; font-size: 3rem; margin-bottom: 10px; }
 
-        h1 { color: var(--dark-pink); text-shadow: 2px 2px white; font-size: 2.5rem; margin-bottom: 10px; }
+        /* Setup Box */
+        .setup-box {
+            background: white; padding: 20px; border-radius: 25px;
+            border: 3px solid var(--primary-pink); display: inline-block;
+            margin-bottom: 20px; box-shadow: 0 10px 25px rgba(255, 175, 204, 0.3);
+        }
+        input { padding: 10px; border-radius: 50px; border: 2px solid var(--primary-pink); width: 200px; text-align: center; outline: none; }
 
+        /* Status & Tellers */
+        .status-bar { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .counter { background: white; padding: 10px 20px; border-radius: 50px; border: 2px solid var(--primary-pink); font-weight: bold; }
+        .online-status { color: #2a9d8f; font-weight: bold; margin-bottom: 10px; display: block; }
+
+        /* Menu */
         .menu { 
             background: white; padding: 20px; border-radius: 25px; 
             box-shadow: 0 10px 25px rgba(255, 175, 204, 0.4);
@@ -32,189 +46,222 @@
 
         button { 
             background: var(--primary-pink); color: white; border: none; 
-            padding: 12px 20px; border-radius: 50px; cursor: pointer; 
-            font-weight: bold; margin: 5px; transition: 0.3s;
+            padding: 12px 25px; border-radius: 50px; cursor: pointer; 
+            font-weight: bold; transition: 0.3s; box-shadow: 0 4px 0px #eb8ba9;
         }
+        button:hover { transform: translateY(-3px); background: #ff99bb; }
+        button.active { background: var(--dark-pink); box-shadow: 0 4px 0px #c91850; }
 
-        button.active { background: var(--dark-pink); }
-
-        #my-pick { 
-            background: white; padding: 10px 25px; border-radius: 50px;
-            display: inline-flex; align-items: center; gap: 15px;
-            border: 3px solid var(--dark-pink); margin-bottom: 20px;
-            animation: heartBeat 2s infinite;
-        }
-
-        @keyframes heartBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-
-        #picked-img { height: 60px; width: 60px; object-fit: contain; }
-
-        #board { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
-            gap: 15px; 
-        }
-
+        /* Kaarten */
+        #board { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
         .card { 
             background: white; border-radius: 15px; padding: 15px;
-            cursor: pointer; transition: all 0.4s ease; 
-            border: 2px solid #ffdeeb; box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            cursor: pointer; transition: 0.4s; position: relative; border: 2px solid #ffdeeb;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
-
-        .card:hover { transform: translateY(-5px); border-color: var(--primary-pink); }
-
-        .card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 10px; }
-        
-        .card.eliminated { 
-            opacity: 0.2; transform: scale(0.8) rotateX(40deg); 
-            filter: grayscale(100%);
-        }
+        .card img { width: 100%; height: 90px; object-fit: contain; }
+        .card.eliminated { opacity: 0.2; transform: rotateX(70deg); filter: grayscale(1); }
+        .card.eliminated::after { content: "❤️"; position: absolute; top: 10px; right: 10px; }
+        .card.target { border: 4px solid var(--dark-pink); animation: heartBeat 2s infinite; }
 
         .hidden { display: none; }
+
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
 
         .floating-heart {
             position: fixed; color: var(--primary-pink);
             pointer-events: none; animation: floatUp 4s linear infinite;
-            z-index: -1; opacity: 0.5;
+            z-index: -1; opacity: 0.6;
         }
         @keyframes floatUp {
-            0% { transform: translateY(110vh); opacity: 1; }
-            100% { transform: translateY(-10vh); opacity: 0; }
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Wie is het? ❤️</h1>
+<div class="container">
+    <h1>Wie is het? ❤️</h1>
 
-        <div class="menu">
-            <button onclick="changeTheme('mensen')" id="btn-mensen" class="active">👥 Mensen</button>
-            <button onclick="changeTheme('dieren')" id="btn-dieren">🐾 Dieren</button>
-            <button onclick="changeTheme('voorwerpen')" id="btn-voorwerpen">🎁 Voorwerpen</button>
-            <br><br>
-            <button onclick="resetGame()" style="background: var(--soft-blue);">🔄 Nieuw Spel / Reset</button>
-            <button onclick="window.location.href='index.html'" style="background: #aaa;">🏠 Terug naar Game</button>
-        </div>
-
-        <div id="selection-screen">
-            <h2 style="color: var(--dark-pink)">Stap 1: Klik op het plaatje dat JIJ bent</h2>
-        </div>
-
-        <div id="game-screen" class="hidden">
-            <div id="my-pick">
-                <span>Jij bent: <strong><span id="picked-name">...</span></strong></span>
-                <img id="picked-img" src="" alt="">
-            </div>
-            <h2 style="color: #888;">Stap 2: Stel vragen en klik kaartjes weg!</h2>
-        </div>
-
-        <div id="board"></div>
+    <div id="setup-area" class="setup-box">
+        <p>Voer jullie geheime code in:</p>
+        <input type="text" id="room-id" placeholder="bijv. onze-date-2026">
+        <button onclick="startLive()">Verbinden</button>
     </div>
 
-<script>
-    // We gebruiken een stabiele CDN voor de plaatjes (Twemoji)
-    const getImg = (code) => `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/${code}.png`;
+    <div id="game-area" class="hidden">
+        <span id="connection-msg" class="online-status">Wachten op Maxine...</span>
+        
+        <div class="status-bar">
+            <div class="counter">Ik heb nog: <span id="my-count">25</span></div>
+            <div class="counter" style="border-color: var(--soft-blue);">Maxine heeft nog: <span id="partner-count">25</span></div>
+        </div>
 
+        <div class="menu">
+            <div id="theme-selector">
+                <button onclick="changeTheme('mensen')" id="btn-mensen" class="active">👥 Mensen</button>
+                <button onclick="changeTheme('dieren')" id="btn-dieren">🐾 Dieren</button>
+                <button onclick="changeTheme('voorwerpen')" id="btn-voorwerpen">🎁 Voorwerpen</button>
+            </div>
+            <button onclick="resetGame()" style="background: var(--soft-blue); box-shadow: 0 4px 0px #76b1e6; margin-top: 10px;">🔄 Nieuw Spel</button>
+        </div>
+
+        <h2 id="instruction" style="color: var(--dark-pink)">Kies eerst je geheime figuurtje...</h2>
+        <div id="board"></div>
+    </div>
+</div>
+
+<script>
     const themes = {
-   mensen: [
-            { name: "Kok", img: getImg("1f468-200d-1f373") },
-            { name: "Astronaut", img: getImg("1f468-200d-1f680") },
-            { name: "Politie", img: getImg("1f46e") },
-            { name: "Dokter", img: getImg("1f9d1-200d-2695-fe0f") }, // Verbeterde code
-            { name: "Piraat", img: "https://www.gstatic.com/android/keyboard/emojikitchen/20200805/u1f468/u1f468_u2620.png" },
-            { name: "Prinses", img: getImg("1f478") },
-            { name: "Ninja", img: getImg("1f977") }, // Nieuwe Ninja foto!
-            { name: "Clown", img: getImg("1f921") },
-            { name: "Detective", img: getImg("1f575") },
-            { name: "Boer", img: getImg("1f468-200d-1f33e") },
-            { name: "Zanger", img: getImg("1f468-200d-1f3a4") },
-            { name: "Leraar", img: getImg("1f468-200d-1f3eb") },
-            { name: "Brandweer", img: getImg("1f468-200d-1f692") },
-            { name: "Oma", img: getImg("1f475") },
-            { name: "Baby", img: getImg("1f476") },
-            { name: "Elf", img: getImg("1f9dd") },
-            { name: "Zombie", img: getImg("1f9df") },
-            { name: "Vampier", img: getImg("1f9db") },
-            { name: "Schilder", img: getImg("1f468-200d-1f3a8") },
-            { name: "Piloot", img: getImg("1f468-200d-2708-fe0f") }, // Verbeterde code
-            { name: "Rechter", img: getImg("1f468-200d-2696-fe0f") }, // Verbeterde code
-            { name: "Monteur", img: getImg("1f468-200d-1f527") },
-            { name: "Koning", img: getImg("1f451") },
-            { name: "Superheld", img: getImg("1f9b8") },
-            { name: "Kerstman", img: getImg("1f385") }
+        mensen: [
+            { name: "Kok", img: "https://openmoji.org/data/color/svg/1F468-200D-1F373.svg" },
+            { name: "Astronaut", img: "https://openmoji.org/data/color/svg/1F468-200D-1F680.svg" },
+            { name: "Politie", img: "https://openmoji.org/data/color/svg/1F46E.svg" },
+            { name: "Dokter", img: "https://openmoji.org/data/color/svg/1F468-200D-2695.svg" },
+            { name: "Piraat", img: "https://openmoji.org/data/color/svg/1F3F4-200D-2620.svg" },
+            { name: "Prinses", img: "https://openmoji.org/data/color/svg/1F478.svg" },
+            { name: "Ninja", img: "https://openmoji.org/data/color/svg/1F7F0.svg" },
+            { name: "Clown", img: "https://openmoji.org/data/color/svg/1F921.svg" },
+            { name: "Detective", img: "https://openmoji.org/data/color/svg/1F575.svg" },
+            { name: "Boer", img: "https://openmoji.org/data/color/svg/1F468-200D-1F33E.svg" },
+            { name: "Zanger", img: "https://openmoji.org/data/color/svg/1F468-200D-1F3A4.svg" },
+            { name: "Leraar", img: "https://openmoji.org/data/color/svg/1F468-200D-1F3EB.svg" },
+            { name: "Brandweer", img: "https://openmoji.org/data/color/svg/1F468-200D-1F692.svg" },
+            { name: "Oma", img: "https://openmoji.org/data/color/svg/1F475.svg" },
+            { name: "Baby", img: "https://openmoji.org/data/color/svg/1F476.svg" },
+            { name: "Elf", img: "https://openmoji.org/data/color/svg/1F9DD.svg" },
+            { name: "Zombie", img: "https://openmoji.org/data/color/svg/1F9DF.svg" },
+            { name: "Vampier", img: "https://openmoji.org/data/color/svg/1F9DB.svg" },
+            { name: "Schilder", img: "https://openmoji.org/data/color/svg/1F468-200D-1F3A8.svg" },
+            { name: "Piloot", img: "https://openmoji.org/data/color/svg/1F468-200D-2708.svg" },
+            { name: "Rechter", img: "https://openmoji.org/data/color/svg/1F468-200D-2696.svg" },
+            { name: "Monteur", img: "https://openmoji.org/data/color/svg/1F468-200D-1F527.svg" },
+            { name: "Koning", img: "https://openmoji.org/data/color/svg/1F934.svg" },
+            { name: "Superheld", img: "https://openmoji.org/data/color/svg/1F9B8.svg" },
+            { name: "Dwerg", img: "https://openmoji.org/data/color/svg/1F9D4.svg" }
         ],
         dieren: [
-            { name: "Leeuw", img: getImg("1f981") },
-            { name: "Pinguïn", img: getImg("1f427") },
-            { name: "Kikker", img: getImg("1f438") },
-            { name: "Hond", img: getImg("1f415") },
-            { name: "Kat", img: getImg("1f408") },
-            { name: "Varken", img: getImg("1f416") },
-            { name: "Aap", img: getImg("1f412") },
-            { name: "Kip", img: getImg("1f413") },
-            { name: "Olifant", img: getImg("1f418") },
-            { name: "Giraffe", img: getImg("1f992") },
-            { name: "Panda", img: getImg("1f43c") },
-            { name: "Haai", img: getImg("1f988") },
-            { name: "Slang", img: getImg("1f40d") },
-            { name: "Bij", img: getImg("1f41d") },
-            { name: "Vlinder", img: getImg("1f98b") },
-            { name: "Walvis", img: getImg("1f433") },
-            { name: "Schildpad", img: getImg("1f422") },
-            { name: "Konijn", img: getImg("1f407") },
-            { name: "Tijger", img: getImg("1f405") },
-            { name: "Uil", img: getImg("1f989") },
-            { name: "Krokodil", img: getImg("1f40a") },
-            { name: "Kameleon", img: getImg("1f98e") },
-            { name: "Octopus", img: getImg("1f419") },
-            { name: "Paard", img: getImg("1f40e") },
-            { name: "Flamingo", img: getImg("1f9a9") }
+            { name: "Leeuw", img: "https://openmoji.org/data/color/svg/1F981.svg" },
+            { name: "Pinguïn", img: "https://openmoji.org/data/color/svg/1F427.svg" },
+            { name: "Kikker", img: "https://openmoji.org/data/color/svg/1F438.svg" },
+            { name: "Hond", img: "https://openmoji.org/data/color/svg/1F415.svg" },
+            { name: "Kat", img: "https://openmoji.org/data/color/svg/1F408.svg" },
+            { name: "Varken", img: "https://openmoji.org/data/color/svg/1F416.svg" },
+            { name: "Aap", img: "https://openmoji.org/data/color/svg/1F412.svg" },
+            { name: "Kip", img: "https://openmoji.org/data/color/svg/1F413.svg" },
+            { name: "Olifant", img: "https://openmoji.org/data/color/svg/1F418.svg" },
+            { name: "Giraffe", img: "https://openmoji.org/data/color/svg/1F92D.svg" },
+            { name: "Panda", img: "https://openmoji.org/data/color/svg/1F43C.svg" },
+            { name: "Haai", img: "https://openmoji.org/data/color/svg/1F988.svg" },
+            { name: "Slang", img: "https://openmoji.org/data/color/svg/1F40D.svg" },
+            { name: "Bij", img: "https://openmoji.org/data/color/svg/1F41D.svg" },
+            { name: "Vlinder", img: "https://openmoji.org/data/color/svg/1F98B.svg" },
+            { name: "Walvis", img: "https://openmoji.org/data/color/svg/1F433.svg" },
+            { name: "Schildpad", img: "https://openmoji.org/data/color/svg/1F422.svg" },
+            { name: "Konijn", img: "https://openmoji.org/data/color/svg/1F407.svg" },
+            { name: "Tijger", img: "https://openmoji.org/data/color/svg/1F405.svg" },
+            { name: "Uil", img: "https://openmoji.org/data/color/svg/1F989.svg" },
+            { name: "Krokodil", img: "https://openmoji.org/data/color/svg/1F40A.svg" },
+            { name: "Kameleon", img: "https://openmoji.org/data/color/svg/1F98E.svg" },
+            { name: "Octopus", img: "https://openmoji.org/data/color/svg/1F419.svg" },
+            { name: "Paard", img: "https://openmoji.org/data/color/svg/1F40E.svg" },
+            { name: "Flamingo", img: "https://openmoji.org/data/color/svg/1F9A9.svg" }
         ],
         voorwerpen: [
-            { name: "Gitaar", img: getImg("1f3b8") },
-            { name: "Telefoon", img: getImg("1f4f1") },
-            { name: "Pizza", img: getImg("1f355") },
-            { name: "Auto", img: getImg("1f697") },
-            { name: "Sleutel", img: getImg("1f511") },
-            { name: "Cadeau", img: getImg("1f381") },
-            { name: "Bril", img: getImg("1f453") },
-            { name: "Voetbal", img: getImg("26bd") },
-            { name: "Paraplu", img: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/2602.png" },
-            { name: "Rugzak", img: getImg("1f392") },
-            { name: "Horloge", img: getImg("231a") },
-            { name: "Laptop", img: getImg("1f4bb") },
-            { name: "Lamp", img: getImg("1f4a1") },
-            { name: "Koffie", img: getImg("2615") },
-            { name: "Ijsje", img: getImg("1f366") },
-            { name: "Vliegtuig", img: getImg("2708") },
-            { name: "Fiets", img: getImg("1f6b2") },
-            { name: "Boek", img: getImg("1f4d6") },
-            { name: "Trommel", img: getImg("1f941") },
-            { name: "Zonnebril", img: getImg("1f576") },
-            { name: "Schoen", img: getImg("1f45f") },
-            { name: "Kaars", img: getImg("1f56f") },
-            { name: "Verrekijker", img: getImg("1f50d") },
-            { name: "Hamer", img: getImg("1f528") },
-            { name: "Diamant", img: getImg("1f48e") }
+            { name: "Gitaar", img: "https://openmoji.org/data/color/svg/1F3B8.svg" },
+            { name: "Telefoon", img: "https://openmoji.org/data/color/svg/1F4F1.svg" },
+            { name: "Pizza", img: "https://openmoji.org/data/color/svg/1F355.svg" },
+            { name: "Auto", img: "https://openmoji.org/data/color/svg/1F697.svg" },
+            { name: "Sleutel", img: "https://openmoji.org/data/color/svg/1F511.svg" },
+            { name: "Cadeau", img: "https://openmoji.org/data/color/svg/1F381.svg" },
+            { name: "Bril", img: "https://openmoji.org/data/color/svg/1F453.svg" },
+            { name: "Voetbal", img: "https://openmoji.org/data/color/svg/26BD.svg" },
+            { name: "Paraplu", img: "https://openmoji.org/data/color/svg/2602.svg" },
+            { name: "Rugzak", img: "https://openmoji.org/data/color/svg/1F392.svg" },
+            { name: "Horloge", img: "https://openmoji.org/data/color/svg/231A.svg" },
+            { name: "Laptop", img: "https://openmoji.org/data/color/svg/1F4BB.svg" },
+            { name: "Lamp", img: "https://openmoji.org/data/color/svg/1F4A1.svg" },
+            { name: "Koffie", img: "https://openmoji.org/data/color/svg/2615.svg" },
+            { name: "Ijsje", img: "https://openmoji.org/data/color/svg/1F366.svg" },
+            { name: "Vliegtuig", img: "https://openmoji.org/data/color/svg/2708.svg" },
+            { name: "Fiets", img: "https://openmoji.org/data/color/svg/1F6B2.svg" },
+            { name: "Boek", img: "https://openmoji.org/data/color/svg/1F4D6.svg" },
+            { name: "Trommel", img: "https://openmoji.org/data/color/svg/1F941.svg" },
+            { name: "Zonnebril", img: "https://openmoji.org/data/color/svg/1F576.svg" },
+            { name: "Schoen", img: "https://openmoji.org/data/color/svg/1F45F.svg" },
+            { name: "Kaars", img: "https://openmoji.org/data/color/svg/1F56F.svg" },
+            { name: "Verrekijker", img: "https://openmoji.org/data/color/svg/1F50D.svg" },
+            { name: "Hamer", img: "https://openmoji.org/data/color/svg/1F528.svg" },
+            { name: "Diamant", img: "https://openmoji.org/data/color/svg/1F48E.svg" }
         ]
     };
 
     let currentTheme = 'mensen';
     let isChoosing = true;
+    let peer, conn;
+    let myCount = 25;
+
+    function startLive() {
+        const roomId = document.getElementById('room-id').value;
+        if(!roomId) return alert("Kies een code!");
+
+        peer = new Peer('love-wieishet-' + roomId);
+
+        peer.on('open', () => {
+            document.getElementById('setup-area').classList.add('hidden');
+            document.getElementById('game-area').classList.remove('hidden');
+            renderBoard();
+        });
+
+        // Als partner verbindt
+        peer.on('connection', (connection) => {
+            conn = connection;
+            setupPeerEvents();
+        });
+
+        // Als wij verbinden met partner
+        peer.on('error', (err) => {
+            if(err.type === 'unavailable-id') {
+                const connPeer = new Peer();
+                setTimeout(() => {
+                    conn = connPeer.connect('love-wieishet-' + roomId);
+                    setupPeerEvents();
+                }, 500);
+            }
+        });
+    }
+
+    function setupPeerEvents() {
+        conn.on('open', () => {
+            document.getElementById('connection-msg').innerText = "💖 Live verbonden met Maxine!";
+        });
+
+        conn.on('data', (data) => {
+            if(data.type === 'update-count') {
+                document.getElementById('partner-count').innerText = data.count;
+                if(data.count === 1) alert("Pas op! Maxine heeft er nog maar 1 over!");
+            }
+            if(data.type === 'change-theme') {
+                updateThemeLocal(data.theme);
+            }
+            if(data.type === 'reset') {
+                resetGameLocal();
+            }
+        });
+    }
 
     function renderBoard() {
         const board = document.getElementById('board');
         board.innerHTML = '';
-        const items = [...themes[currentTheme]];
-
-        items.forEach((item) => {
+        themes[currentTheme].forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'card';
-            card.innerHTML = `
-                <img src="${item.img}" alt="${item.name}">
-                <p>${item.name}</p>
-            `;
+            card.id = 'card-' + index;
+            card.innerHTML = `<img src="${item.img}"><p>${item.name}</p>`;
             card.onclick = () => handleCardClick(item, card);
             board.appendChild(card);
         });
@@ -222,27 +269,53 @@
 
     function handleCardClick(item, cardElement) {
         if (isChoosing) {
-            document.getElementById('picked-name').innerText = item.name;
-            document.getElementById('picked-img').src = item.img;
-            document.getElementById('selection-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
+            cardElement.classList.add('target');
+            document.getElementById('instruction').innerHTML = `Jij bent: <strong>${item.name}</strong>. Stel nu je vragen!`;
             isChoosing = false;
         } else {
+            if(cardElement.classList.contains('target')) return;
             cardElement.classList.toggle('eliminated');
+            updateMyCount();
+        }
+    }
+
+    function updateMyCount() {
+        const eliminated = document.querySelectorAll('.card.eliminated').length;
+        myCount = 25 - eliminated;
+        document.getElementById('my-count').innerText = myCount;
+        
+        if(conn && conn.open) {
+            conn.send({ type: 'update-count', count: myCount });
         }
     }
 
     function changeTheme(theme) {
+        updateThemeLocal(theme);
+        if(conn && conn.open) {
+            conn.send({ type: 'change-theme', theme: theme });
+        }
+    }
+
+    function updateThemeLocal(theme) {
         currentTheme = theme;
-        document.querySelectorAll('.menu button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('#theme-selector button').forEach(btn => btn.classList.remove('active'));
         document.getElementById('btn-' + theme).classList.add('active');
-        resetGame();
+        resetGameLocal();
     }
 
     function resetGame() {
+        resetGameLocal();
+        if(conn && conn.open) {
+            conn.send({ type: 'reset' });
+        }
+    }
+
+    function resetGameLocal() {
         isChoosing = true;
-        document.getElementById('selection-screen').classList.remove('hidden');
-        document.getElementById('game-screen').classList.add('hidden');
+        myCount = 25;
+        document.getElementById('my-count').innerText = "25";
+        document.getElementById('partner-count').innerText = "25";
+        document.getElementById('instruction').innerText = "Kies eerst je geheime figuurtje...";
         renderBoard();
     }
 
@@ -255,10 +328,9 @@
             heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
             document.body.appendChild(heart);
             setTimeout(() => heart.remove(), 4000);
-        }, 800);
+        }, 600);
     }
 
-    renderBoard();
     createHearts();
 </script>
 
