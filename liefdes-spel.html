@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Wie ben ik voor jou? ❤️</title>
+    <style>
+        body { 
+            font-family: 'Comic Sans MS', cursive, sans-serif; 
+            background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 50%, #a1c4fd 100%);
+            min-height: 100vh; margin: 0; padding: 20px; text-align: center; color: #555;
+        }
+        h1 { color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); margin-top: 0; }
+        
+        .menu { background: rgba(255, 255, 255, 0.7); padding: 20px; border-radius: 25px; display: inline-block; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        button { background: #ff4d6d; color: white; border: none; padding: 12px 25px; border-radius: 50px; cursor: pointer; font-size: 16px; margin: 5px; transition: 0.3s; }
+        button:hover { background: #ff758c; transform: scale(1.1); }
+        button.active { background: #6c5ce7; }
+
+        #board { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; max-width: 900px; margin: 30px auto; }
+        .card { 
+            background: rgba(255, 255, 255, 0.9); border: 3px solid #fff; border-radius: 20px; padding: 10px;
+            cursor: pointer; transition: all 0.4s; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .card img { width: 60px; height: 60px; object-fit: contain; }
+        .card p { margin: 5px 0 0; font-size: 12px; font-weight: bold; }
+        .card.eliminated { opacity: 0.3; filter: grayscale(100%) blur(1px); transform: scale(0.8); }
+        
+        #my-pick { 
+            background: white; padding: 20px; border-radius: 20px; display: inline-block; 
+            margin-bottom: 20px; border: 3px dashed #ff4d6d; color: #ff4d6d; font-weight: bold;
+        }
+        .heart { position: fixed; font-size: 20px; pointer-events: none; animation: float 4s linear infinite; }
+        @keyframes float { 0% { transform: translateY(100vh); opacity: 0; } 50% { opacity: 1; } 100% { transform: translateY(-100px); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <h1>Wie is het? - Liefde Editie ❤️</h1>
+    <div class="menu">
+        <button onclick="changeTheme('mensen')" id="btn-mensen" class="active">Mensen</button>
+        <button onclick="changeTheme('dieren')" id="btn-dieren">Dieren</button>
+        <button onclick="changeTheme('voorwerpen')" id="btn-voorwerpen">Voorwerpen</button>
+        <button onclick="resetGame()" style="background: #6c5ce7;">Nieuw Spel</button>
+    </div>
+
+    <div id="game-area">
+        <div id="selection-screen">
+            <h2>Kies jouw geheime kaartje!</h2>
+        </div>
+        <div id="game-screen" class="hidden">
+            <div id="my-pick">Jouw geheime kaartje: <span id="picked-name"></span> <img id="picked-img" style="height:30px; vertical-align:middle;"></div>
+        </div>
+        <div id="board"></div>
+    </div>
+
+<script>
+    // 
+    const themes = {
+        mensen: ["Kok", "Astronaut", "Politie", "Dokter", "Piraat", "Prinses", "Ninja", "Clown", "Detective", "Boer", "Zanger", "Leraar", "Brandweer", "Oma", "Baby", "Elf", "Zombie", "Vampier", "Atleet", "Duiker", "Schilder", "Piloot", "Rechter", "Monteur", "Koning"],
+        dieren: ["Leeuw", "Pinguïn", "Kikker", "Hond", "Kat", "Varken", "Aap", "Kip", "Olifant", "Giraffe", "Panda", "Beer", "Haai", "Slang", "Bij", "Vlinder", "Walvis", "Schildpad", "Konijn", "Tijger", "Uil", "Krokodil", "Kameleon", "Octopus", "Paard"],
+        voorwerpen: ["Gitaar", "Telefoon", "Pizza", "Auto", "Sleutel", "Cadeau", "Bril", "Voetbal", "Paraplu", "Rugzak", "Horloge", "Laptop", "Lamp", "Koffie", "Ijsje", "Vliegtuig", "Fiets", "Boek", "Trommel", "Zonnebril", "Schoen", "Rugzak", "Kaars", "Verrekijker", "Hamer"]
+    };
+
+    let currentTheme = 'mensen';
+    let isChoosing = true;
+
+    function renderBoard() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+        const items = themes[currentTheme].sort(() => Math.random() - 0.5);
+
+        items.forEach((name, i) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            // We gebruiken een vaste bron voor de emoji's (gebruikersvriendelijk)
+            card.innerHTML = `<img src="https://openmoji.org/data/color/svg/1F60A.svg" alt="${name}"><p>${name}</p>`;
+            card.onclick = () => {
+                if (isChoosing) {
+                    document.getElementById('picked-name').innerText = name;
+                    document.getElementById('selection-screen').classList.add('hidden');
+                    document.getElementById('game-screen').classList.remove('hidden');
+                    isChoosing = false;
+                } else {
+                    card.classList.toggle('eliminated');
+                }
+            };
+            board.appendChild(card);
+        });
+    }
+
+    function changeTheme(theme) {
+        currentTheme = theme;
+        document.querySelectorAll('.menu button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-'+theme).classList.add('active');
+        resetGame();
+    }
+
+    function resetGame() {
+        isChoosing = true;
+        document.getElementById('selection-screen').classList.remove('hidden');
+        document.getElementById('game-screen').classList.add('hidden');
+        renderBoard();
+    }
+
+    // Liefdevolle animatie
+    setInterval(() => {
+        const heart = document.createElement('div');
+        heart.innerHTML = '❤️';
+        heart.className = 'heart';
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 5000);
+    }, 800);
+
+    renderBoard();
+</script>
+</body>
+</html>
