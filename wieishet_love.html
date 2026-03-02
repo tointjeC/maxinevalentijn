@@ -2,8 +2,9 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🕵️‍♀️ Wie is het? - Live ❤️</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.min.js"></script>
     <style>
         :root {
             --primary-pink: #ffafcc;
@@ -13,72 +14,64 @@
         }
 
         body { 
-            font-family: 'Comic Sans MS', 'Segoe UI', cursive; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
             background: var(--bg-color);
             background-image: radial-gradient(#ffc8dd 1px, transparent 1px);
             background-size: 20px 20px;
-            margin: 0; padding: 20px; color: #4a4a4a;
+            margin: 0; padding: 10px; color: #4a4a4a;
             text-align: center;
         }
 
-        .container { max-width: 1100px; margin: 0 auto; }
-        h1 { color: var(--dark-pink); text-shadow: 2px 2px white; font-size: 3rem; margin-bottom: 10px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 { color: var(--dark-pink); text-shadow: 2px 2px white; margin-bottom: 10px; }
 
         /* Setup Box */
-        .setup-box {
-            background: white; padding: 20px; border-radius: 25px;
+        #setup-area {
+            background: white; padding: 25px; border-radius: 25px;
             border: 3px solid var(--primary-pink); display: inline-block;
-            margin-bottom: 20px; box-shadow: 0 10px 25px rgba(255, 175, 204, 0.3);
+            margin-top: 50px; box-shadow: 0 10px 25px rgba(255, 175, 204, 0.3);
         }
-        input { padding: 10px; border-radius: 50px; border: 2px solid var(--primary-pink); width: 200px; text-align: center; outline: none; }
+        input { padding: 12px; border-radius: 50px; border: 2px solid var(--primary-pink); width: 220px; text-align: center; outline: none; font-size: 16px; }
 
-        /* Status & Tellers */
-        .status-bar { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
-        .counter { background: white; padding: 10px 20px; border-radius: 50px; border: 2px solid var(--primary-pink); font-weight: bold; }
-        .online-status { color: #2a9d8f; font-weight: bold; margin-bottom: 10px; display: block; }
+        /* Status */
+        .status-bar { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+        .counter { background: white; padding: 8px 15px; border-radius: 50px; border: 2px solid var(--primary-pink); font-weight: bold; font-size: 14px; }
+        .online-status { color: #2a9d8f; font-weight: bold; font-size: 12px; margin-bottom: 10px; display: block; }
 
-        /* Menu */
         .menu { 
-            background: white; padding: 20px; border-radius: 25px; 
-            box-shadow: 0 10px 25px rgba(255, 175, 204, 0.4);
-            margin-bottom: 30px; border: 3px solid var(--primary-pink);
+            background: white; padding: 15px; border-radius: 20px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px; border: 2px solid var(--primary-pink);
         }
 
         button { 
             background: var(--primary-pink); color: white; border: none; 
-            padding: 12px 25px; border-radius: 50px; cursor: pointer; 
-            font-weight: bold; transition: 0.3s; box-shadow: 0 4px 0px #eb8ba9;
+            padding: 10px 20px; border-radius: 50px; cursor: pointer; 
+            font-weight: bold; transition: 0.2s;
         }
-        button:hover { transform: translateY(-3px); background: #ff99bb; }
-        button.active { background: var(--dark-pink); box-shadow: 0 4px 0px #c91850; }
+        button.active { background: var(--dark-pink); }
 
         /* Kaarten */
-        #board { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
+        #board { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; padding: 10px; }
         .card { 
-            background: white; border-radius: 15px; padding: 15px;
-            cursor: pointer; transition: 0.4s; position: relative; border: 2px solid #ffdeeb;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            background: white; border-radius: 15px; padding: 10px;
+            cursor: pointer; transition: 0.3s; position: relative; border: 2px solid #ffdeeb;
         }
-        .card img { width: 100%; height: 90px; object-fit: contain; }
-        .card.eliminated { opacity: 0.2; transform: rotateX(70deg); filter: grayscale(1); }
-        .card.eliminated::after { content: "❤️"; position: absolute; top: 10px; right: 10px; }
-        .card.target { border: 4px solid var(--dark-pink); animation: heartBeat 2s infinite; }
+        .card img { width: 100%; height: 70px; object-fit: contain; }
+        .card p { font-size: 12px; margin: 5px 0 0 0; font-weight: bold; }
+        .card.eliminated { opacity: 0.15; transform: scale(0.9); filter: grayscale(1); }
+        .card.target { border: 4px solid var(--dark-pink); background: #fff0f5; }
 
-        .hidden { display: none; }
-
-        @keyframes heartBeat {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
+        .hidden { display: none !important; }
 
         .floating-heart {
             position: fixed; color: var(--primary-pink);
             pointer-events: none; animation: floatUp 4s linear infinite;
-            z-index: -1; opacity: 0.6;
+            z-index: -1; opacity: 0.5;
         }
         @keyframes floatUp {
-            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+            0% { transform: translateY(110vh); opacity: 1; }
+            100% { transform: translateY(-10vh); opacity: 0; }
         }
     </style>
 </head>
@@ -87,18 +80,19 @@
 <div class="container">
     <h1>Wie is het? ❤️</h1>
 
-    <div id="setup-area" class="setup-box">
-        <p>Voer jullie geheime code in:</p>
-        <input type="text" id="room-id" placeholder="bijv. onze-date-2026">
-        <button onclick="startLive()">Verbinden</button>
+    <div id="setup-area">
+        <p>Voer jullie kamercode in:</p>
+        <input type="text" id="room-id" placeholder="bijv. date-2026">
+        <br><br>
+        <button onclick="startApp()">Start Spel</button>
     </div>
 
     <div id="game-area" class="hidden">
-        <span id="connection-msg" class="online-status">Wachten op Maxine...</span>
+        <span id="connection-msg" class="online-status">💖 Live Verbonden</span>
         
         <div class="status-bar">
-            <div class="counter">Ik heb nog: <span id="my-count">25</span></div>
-            <div class="counter" style="border-color: var(--soft-blue);">Maxine heeft nog: <span id="partner-count">25</span></div>
+            <div class="counter">Ik: <span id="my-count">25</span></div>
+            <div class="counter" style="border-color: var(--soft-blue);">Maxine: <span id="partner-count">25</span></div>
         </div>
 
         <div class="menu">
@@ -107,10 +101,10 @@
                 <button onclick="changeTheme('dieren')" id="btn-dieren">🐾 Dieren</button>
                 <button onclick="changeTheme('voorwerpen')" id="btn-voorwerpen">🎁 Voorwerpen</button>
             </div>
-            <button onclick="resetGame()" style="background: var(--soft-blue); box-shadow: 0 4px 0px #76b1e6; margin-top: 10px;">🔄 Nieuw Spel</button>
+            <button onclick="sendReset()" style="background: var(--soft-blue); margin-top: 10px; padding: 5px 15px; font-size: 12px;">🔄 Nieuw Spel voor beiden</button>
         </div>
 
-        <h2 id="instruction" style="color: var(--dark-pink)">Kies eerst je geheime figuurtje...</h2>
+        <h3 id="instruction" style="color: var(--dark-pink); margin: 10px 0;">Kies eerst je eigen figuurtje...</h3>
         <div id="board"></div>
     </div>
 </div>
@@ -194,64 +188,47 @@
             { name: "Zonnebril", img: "https://openmoji.org/data/color/svg/1F576.svg" },
             { name: "Schoen", img: "https://openmoji.org/data/color/svg/1F45F.svg" },
             { name: "Kaars", img: "https://openmoji.org/data/color/svg/1F56F.svg" },
-            { name: "Verrekijker", img: "https://openmoji.org/data/color/svg/1F50D.svg" },
-            { name: "Hamer", img: "https://openmoji.org/data/color/svg/1F528.svg" },
             { name: "Diamant", img: "https://openmoji.org/data/color/svg/1F48E.svg" }
         ]
     };
 
     let currentTheme = 'mensen';
     let isChoosing = true;
-    let peer, conn;
+    let pubnub, channel;
     let myCount = 25;
 
-    function startLive() {
-        const roomId = document.getElementById('room-id').value;
+    function startApp() {
+        const roomId = document.getElementById('room-id').value.trim().toLowerCase();
         if(!roomId) return alert("Kies een code!");
 
-        peer = new Peer('love-wieishet-' + roomId);
+        channel = 'wie_is_het_2026_' + roomId;
 
-        peer.on('open', () => {
-            document.getElementById('setup-area').classList.add('hidden');
-            document.getElementById('game-area').classList.remove('hidden');
-            renderBoard();
+        pubnub = new PubNub({
+            publishKey: 'pub-c-49033481-d4f1-460d-852b-f06940f8072f',
+            subscribeKey: 'sub-c-17e99708-3010-4411-b1e1-15582c0694a5',
+            uuid: 'user_' + Math.random().toString(36).substring(7)
         });
 
-        // Als partner verbindt
-        peer.on('connection', (connection) => {
-            conn = connection;
-            setupPeerEvents();
-        });
+        pubnub.subscribe({ channels: [channel] });
 
-        // Als wij verbinden met partner
-        peer.on('error', (err) => {
-            if(err.type === 'unavailable-id') {
-                const connPeer = new Peer();
-                setTimeout(() => {
-                    conn = connPeer.connect('love-wieishet-' + roomId);
-                    setupPeerEvents();
-                }, 500);
+        pubnub.addListener({
+            message: (m) => {
+                const data = m.message;
+                if(data.type === 'update-count' && m.publisher !== pubnub.getUUID()) {
+                    document.getElementById('partner-count').innerText = data.count;
+                }
+                if(data.type === 'change-theme') {
+                    updateThemeLocal(data.theme);
+                }
+                if(data.type === 'reset') {
+                    resetGameLocal();
+                }
             }
         });
-    }
 
-    function setupPeerEvents() {
-        conn.on('open', () => {
-            document.getElementById('connection-msg').innerText = "💖 Live verbonden met Maxine!";
-        });
-
-        conn.on('data', (data) => {
-            if(data.type === 'update-count') {
-                document.getElementById('partner-count').innerText = data.count;
-                if(data.count === 1) alert("Pas op! Maxine heeft er nog maar 1 over!");
-            }
-            if(data.type === 'change-theme') {
-                updateThemeLocal(data.theme);
-            }
-            if(data.type === 'reset') {
-                resetGameLocal();
-            }
-        });
+        document.getElementById('setup-area').classList.add('hidden');
+        document.getElementById('game-area').classList.remove('hidden');
+        renderBoard();
     }
 
     function renderBoard() {
@@ -260,7 +237,6 @@
         themes[currentTheme].forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'card';
-            card.id = 'card-' + index;
             card.innerHTML = `<img src="${item.img}"><p>${item.name}</p>`;
             card.onclick = () => handleCardClick(item, card);
             board.appendChild(card);
@@ -270,7 +246,7 @@
     function handleCardClick(item, cardElement) {
         if (isChoosing) {
             cardElement.classList.add('target');
-            document.getElementById('instruction').innerHTML = `Jij bent: <strong>${item.name}</strong>. Stel nu je vragen!`;
+            document.getElementById('instruction').innerHTML = `Jij bent: <strong>${item.name}</strong>`;
             isChoosing = false;
         } else {
             if(cardElement.classList.contains('target')) return;
@@ -281,19 +257,20 @@
 
     function updateMyCount() {
         const eliminated = document.querySelectorAll('.card.eliminated').length;
-        myCount = 25 - eliminated;
+        myCount = themes[currentTheme].length - eliminated;
         document.getElementById('my-count').innerText = myCount;
         
-        if(conn && conn.open) {
-            conn.send({ type: 'update-count', count: myCount });
-        }
+        pubnub.publish({
+            channel: channel,
+            message: { type: 'update-count', count: myCount }
+        });
     }
 
     function changeTheme(theme) {
-        updateThemeLocal(theme);
-        if(conn && conn.open) {
-            conn.send({ type: 'change-theme', theme: theme });
-        }
+        pubnub.publish({
+            channel: channel,
+            message: { type: 'change-theme', theme: theme }
+        });
     }
 
     function updateThemeLocal(theme) {
@@ -303,35 +280,32 @@
         resetGameLocal();
     }
 
-    function resetGame() {
-        resetGameLocal();
-        if(conn && conn.open) {
-            conn.send({ type: 'reset' });
-        }
+    function sendReset() {
+        pubnub.publish({
+            channel: channel,
+            message: { type: 'reset' }
+        });
     }
 
     function resetGameLocal() {
         isChoosing = true;
-        myCount = 25;
-        document.getElementById('my-count').innerText = "25";
-        document.getElementById('partner-count').innerText = "25";
-        document.getElementById('instruction').innerText = "Kies eerst je geheime figuurtje...";
+        const total = themes[currentTheme].length;
+        document.getElementById('my-count').innerText = total;
+        document.getElementById('partner-count').innerText = total;
+        document.getElementById('instruction').innerText = "Kies eerst je eigen figuurtje...";
         renderBoard();
     }
 
-    function createHearts() {
-        setInterval(() => {
-            const heart = document.createElement('div');
-            heart.className = 'floating-heart';
-            heart.innerHTML = '❤️';
-            heart.style.left = Math.random() * 100 + 'vw';
-            heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
-            document.body.appendChild(heart);
-            setTimeout(() => heart.remove(), 4000);
-        }, 600);
-    }
-
-    createHearts();
+    // Floating hearts effect
+    setInterval(() => {
+        const heart = document.createElement('div');
+        heart.className = 'floating-heart';
+        heart.innerHTML = '❤️';
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 4000);
+    }, 800);
 </script>
 
 </body>
