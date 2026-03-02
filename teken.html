@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>🎨 Art Studio: The Love Compass (150 Challenges)</title>
+    <style>
+        :root { 
+            --deep-teal: #006d77; 
+            --soft-pink: #ffafcc;
+            --bg: #f8f9fa;
+        }
+        body { 
+            background: var(--bg); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; padding: 20px; color: #333;
+        }
+        .container { 
+            max-width: 900px; margin: 0 auto; background: white; 
+            padding: 30px; border-radius: 30px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            text-align: center;
+        }
+        h1 { color: var(--deep-teal); margin-top: 0; }
+
+        .toolbar { 
+            display: flex; justify-content: center; gap: 15px; 
+            margin-bottom: 20px; flex-wrap: wrap; 
+            background: #f1f1f1; padding: 15px; border-radius: 15px;
+        }
+        
+        canvas { 
+            background: #fff; border: 4px solid var(--deep-teal); 
+            border-radius: 15px; cursor: crosshair; touch-action: none;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            max-width: 100%;
+        }
+
+        .controls-row { 
+            display: flex; justify-content: center; align-items: center; 
+            gap: 20px; margin-top: 20px; flex-wrap: wrap;
+        }
+        .color-picker { display: flex; gap: 8px; }
+        .color-btn { 
+            width: 35px; height: 35px; border-radius: 50%; border: 2px solid white; 
+            cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; font-size: 18px;
+        }
+        .color-btn:hover { transform: scale(1.2); }
+        .color-btn.active { border: 2px solid var(--deep-teal); transform: scale(1.1); }
+
+        .btn { 
+            padding: 12px 20px; border: none; border-radius: 50px; 
+            cursor: pointer; font-weight: bold; transition: 0.3s;
+            font-family: inherit;
+        }
+        .btn-main { background: var(--deep-teal); color: white; }
+        .btn-clear { background: #ff4d6d; color: white; }
+        
+        #secret-box { 
+            background: #e9f5f5; border: 2px dashed var(--deep-teal);
+            padding: 20px; border-radius: 15px; margin-bottom: 20px; display: none;
+        }
+        .instr-text { font-style: italic; color: #666; margin-bottom: 10px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎨 The Love Compass</h1>
+    
+    <div class="toolbar">
+        <button class="btn btn-main" onclick="setRole('gids')">👤 Ik ben de Gids</button>
+        <button class="btn btn-main" onclick="setRole('schilder')">🖌️ Ik ben de Schilder</button>
+        <button class="btn btn-clear" onclick="clearCanvas()">🗑️ Wis alles</button>
+        <button class="btn" onclick="window.location.href='index.html'" style="background:#ddd;">🏠 Terug</button>
+    </div>
+
+    <div id="secret-box">
+        <p class="instr-text">Jij bent de Gids! Beschrijf dit aan de Schilder:</p>
+        <h2 id="assignment" style="color: var(--deep-teal); margin: 10px 0;">...</h2>
+        <button class="btn btn-main" style="padding: 5px 15px; font-size: 12px;" onclick="newAssignment()">🔄 Andere opdracht</button>
+    </div>
+
+    <div id="paint-zone">
+        <p id="status-msg" class="instr-text">Kies je rol om te beginnen!</p>
+        <canvas id="canvas" width="750" height="500"></canvas>
+
+        <div id="painter-controls" class="controls-row hidden">
+            <div class="color-picker">
+                <div class="color-btn active" style="background: #000000;" onclick="setColor('#000000', this)"></div>
+                <div class="color-btn" style="background: #ff4d6d;" onclick="setColor('#ff4d6d', this)"></div>
+                <div class="color-btn" style="background: #3a86ff;" onclick="setColor('#3a86ff', this)"></div>
+                <div class="color-btn" style="background: #38b000;" onclick="setColor('#38b000', this)"></div>
+                <div class="color-btn" style="background: #ffbe0b;" onclick="setColor('#ffbe0b', this)"></div>
+                <div class="color-btn" style="background: #ffffff; border: 1px solid #ddd;" onclick="setColor('#ffffff', this)" title="Gum">🧽</div>
+            </div>
+            
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>Lijndikte:</span>
+                <input type="range" id="sizeRange" min="2" max="30" value="5" oninput="setSize(this.value)">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // DE GIGANTISCHE LIJST (150)
+    const assignments = [
+        "Een pinguïn met een hartjes-ballon", "Een olifant op een roze skateboard", "Een kat die een zonnebril draagt", 
+        "Een hond met een feesthoedje op", "Een giraf met een hele lange sjaal", "Een hamster in een vliegende schotel", 
+        "Een schildpad met een rugzakje", "Een konijn dat uit een toverhoed komt", "Een trotse leeuw met een glitter-kroon", 
+        "Een luiaard die aan een regenboog hangt", "Een vlinder met patronen van hartjes", "Een krab die piano speelt", 
+        "Een uil met een chique bril", "Een kangoeroe met een baby in een zonnebril", "Een walvis die een confetti-fontein spuit", 
+        "Een eekhoorn met een gouden noot", "Een dolfijn die door een hoepel springt", "Een zebra met gekleurde strepen", 
+        "Een flamingo op een taart", "Een bijtje met een emmertje honing", "Een octopus met 8 ijsjes", 
+        "Een dino met een rugzak", "Een lieveheersbeestje met sterretjes", "Een pauw met hartjesveren", 
+        "Een kikker met een gouden kroon", "Een haai met een feesthoedje", "Een varken dat danst", 
+        "Een schaap met een trui aan", "Een vos die een brief post", "Een koala met een lolly", 
+        "Een eendje met een paraplu", "Een kameleon met regenboogkleuren", "Een wasbeer met een boevenmasker", 
+        "Een rendier met kerstballen in het gewei", "Een spin met een hartjesweb", "Een zeepaardje met een lasso", 
+        "Een kalkoen met een zonnebril", "Een hippo in een tutu", "Een miereneter met een rietje", "Een vogel met een liefdesbrief",
+        "Een pizza ster", "Een lachende taco", "Een kopje koffie met hartjesstoom", "Een ijscoupe met 10 bollen ijs", 
+        "Een dansende banaan", "Een donut met glitters", "Een verliefde avocado", "Een hamburger met een vlaggetje", 
+        "Een zwaaiende sushi-rol", "Een watermeloen met zonnebril", "Een zingende cupcake", "Champagne met confetti", 
+        "Een doosje hartjes-bonbons", "Een vliegende pannenkoek", "Frieten met gezichtjes", "Een broccoli gewichtheffer", 
+        "Een wortel met een konijnenmuts", "Een ananas met een stoer kapsel", "Een spiegelei-zon", "Een kers met een strikje", 
+        "Een marshmallow bij het kampvuur", "Kaas met muizengaatjes", "Een reuzenlolly met een strik", "Een hotdog op een surfplank", 
+        "Een cocktail met parasol", "Een boekenwurm-appel", "Een slapende croissant", "Zout en peper die knuffelen", 
+        "Een aardbei met sproetjes", "Een lichtgevende wortel", "Een kasteel op een roze wolk", "Een raket naar de hartjesmaan", 
+        "Een vliegende auto met ballonnen", "Een broodrooster-tijdmachine", "Een robot met een bloem", "Een schatkist vol snoep", 
+        "Een gitaar met vleugels", "Een magische toverstaf", "Een regenboog eindigend in koekjes", "Een vliegend tapijt", 
+        "Een lantaarnpaal die hartjes schijnt", "Een lachende wekker", "Een schoen-huisje", "Een televisie met een spookje", 
+        "Een telefoon met een kusje", "Een boot in een fles", "Een beer-luchtballon", "Een skateboard met vlammen", 
+        "Een brievenbus vol liefde", "Een hartjes-camera", "Een piano met kleuren-toetsen", "Een snoep-paraplu", 
+        "Een bed op een wolk", "Een telescoop die naar een alien kijkt", "Een magische rugzak", "Een computer die knipoogt", 
+        "Een droomvanger", "Een hartjes-sleutel", "Een klok op 'Love O'Clock'", "Een gouden vulpen", "Een zeepbel-wereld", 
+        "Een draken-vlieger", "Een kristallen bol met jullie toekomst", "Een schommel aan de maan", "Een roze vuurtoren", 
+        "Een badeendje op een troon", "Een kompas naar Maxine", "Een dansend schilderspalet", "Een snoepjes-boom", 
+        "Een onderzee-theekopje", "Antoine en Maxine hand in hand", "Een picknick onder de boom", "Zonsondergang op het strand", 
+        "Hartjes aan een parachute", "Stelletje op een bankje", "Bioscoop met 1 zak popcorn", "Diner bij kaarslicht", 
+        "Bruiloft beer en konijn", "Kampvuur onder de sterren", "Wegwijzer naar Parijs", "Tandem-fiets", 
+        "Gedeelde paraplu in de regen", "Vogelhuisje met welkomstmat", "Hartjes-vuurwerk", "Reuzenrad met hartjes-bakjes", 
+        "Luchtballon boven het bos", "Flessenpost in de oceaan", "Kasteelgracht met roze zwaan", "Dakterras met lampionnetjes", 
+        "Sneeuwpop met sjaal", "Hartjes-doolhof", "Boomhut met geheime ladder", "Strandstoel met hoed", 
+        "Tuin met pratende bloemen", "Regenboogbrug", "Wensput met muntjes", "Straatmuzikant voor een kat", 
+        "Iglo met rokende schoorsteen", "Gondel in Venetië", "Schilderij in een schilderij", "Weg naar de horizon", 
+        "Hartje in het zand", "Uitzicht op de Eiffeltoren", "Briefje op de koelkast", "Doos met 100 puppy's", 
+        "Hartjes-sterrenbeeld", "Cupcake-regen", "Medaille voor Liefste Vriendin", "Troon voor de Koning en Koningin"
+    ];
+
+    let painting = false;
+    let currentRole = '';
+    let currentColor = '#000000';
+    let currentSize = 5;
+
+    function setRole(role) {
+        currentRole = role;
+        const secretBox = document.getElementById('secret-box');
+        const painterControls = document.getElementById('painter-controls');
+        const statusMsg = document.getElementById('status-msg');
+
+        if(role === 'gids') {
+            secretBox.style.display = 'block';
+            painterControls.classList.add('hidden');
+            statusMsg.innerText = "Geef instructies via de telefoon!";
+            canvas.style.pointerEvents = 'none';
+            newAssignment();
+        } else {
+            secretBox.style.display = 'none';
+            painterControls.classList.remove('hidden');
+            statusMsg.innerText = "Schilder wat je hoort!";
+            canvas.style.pointerEvents = 'auto';
+        }
+    }
+
+    function newAssignment() {
+        const random = assignments[Math.floor(Math.random() * assignments.length)];
+        document.getElementById('assignment').innerText = random;
+    }
+
+    function setColor(color, btn) {
+        currentColor = color;
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function setSize(size) {
+        currentSize = size;
+    }
+
+    function startPosition(e) {
+        if(currentRole !== 'schilder') return;
+        painting = true;
+        draw(e);
+    }
+
+    function endPosition() {
+        painting = false;
+        ctx.beginPath();
+    }
+
+    function draw(e) {
+        if (!painting) return;
+        ctx.lineWidth = currentSize;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = currentColor;
+
+        const rect = canvas.getBoundingClientRect();
+        const clientX = (e.clientX || (e.touches && e.touches[0].clientX));
+        const clientY = (e.clientY || (e.touches && e.touches[0].clientY));
+        
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    function clearCanvas() {
+        if(confirm("Helemaal opnieuw beginnen?")) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+
+    canvas.addEventListener('mousedown', startPosition);
+    canvas.addEventListener('mouseup', endPosition);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('touchstart', (e) => { if(currentRole==='schilder') e.preventDefault(); startPosition(e); });
+    canvas.addEventListener('touchend', endPosition);
+    canvas.addEventListener('touchmove', (e) => { if(currentRole==='schilder') e.preventDefault(); draw(e); });
+</script>
+
+</body>
+</html>
