@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>🚢 Zeeslag: Antoine vs Maxine</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <style>
+        :root { --water: #0077b6; --hit: #ef233c; --miss: #8d99ae; --ship: #2b2d42; }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #001219; color: white; margin: 0; padding: 20px; }
+        .game-container { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-top: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(10, 35px); gap: 2px; border: 3px solid #00b4d8; padding: 5px; background: rgba(0,180,216,0.1); }
+        .cell { width: 35px; height: 35px; background: var(--water); border-radius: 2px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .cell.ship { background: var(--ship); border: 1px solid #8d99ae; }
+        .cell.hit { background: var(--hit); }
+        .cell.hit::after { content: '💥'; }
+        .cell.miss { background: var(--miss); }
+        .cell.miss::after { content: '🌊'; }
+        .status-bar { font-size: 1.5rem; margin: 20px; color: #caf0f8; font-weight: bold; }
+        .setup-box { background: #003049; padding: 20px; border-radius: 15px; border: 2px solid #669bbc; display: inline-block; }
+        input { padding: 10px; border-radius: 5px; border: none; width: 200px; }
+        .btn { padding: 10px 20px; background: #669bbc; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>🚢 Zeeslag Online</h1>
+
+    <div id="setup" class="setup-box">
+        <p>Voer een geheime kamercode in (bijv. <i>ons-geheim-123</i>):</p>
+        <input type="text" id="room-id" placeholder="Kamercode...">
+        <button class="btn" onclick="startConnect()">Verbinden</button>
+    </div>
+
+    <div id="game-ui" class="hidden">
+        <div class="status-bar" id="status">Verbinden met Maxine...</div>
+        
+        <div class="game-container">
+            <div>
+                <h3>Jouw Vloot (Maxine schiet hier)</h3>
+                <div id="my-grid" class="grid"></div>
+            </div>
+            <div>
+                <h3>Jouw Aanval (Schiet op Maxine)</h3>
+                <div id="enemy-grid" class="grid"></div>
+            </div>
+        </div>
+        <br>
+        <button class="btn" onclick="window.location.href='index.html'">🏠 Terug naar menu</button>
+    </div>
+
+<script>
+    let peer, conn;
+    let myShips = []; 
+    let myTurn = false;
+
+    // We genereren een random vloot voor de snelheid van het spel
+    function generateRandomShips() {
+        let ships = [];
+        while(ships.length < 5) {
+            let pos = Math.floor(Math.random() * 100);
+            if(!ships.includes(pos)) ships.push(pos);
+        }
+        return ships;
+    }
+
+    function startConnect() {
+        const id = document.getElementById('room-id').value;
+        if(!id) return alert("Kies een code!");
+        
+        // PeerJS setup
+        peer = new Peer('zeeslag-' + id);
+        
+        peer.on('open', () => {
+            document.getElementById('status').innerText = "Wachten tot Maxine verbindt...";
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            initGrids();
+        });
+
+        // Als Maxine verbindt (zij vult dezelfde code in)
+        peer.on('connection', (c) => {
+            conn = c;
+            setupConnection();
+            myTurn = true; 
+            document.getElementById('status').innerText = "Maxine is verbonden! Jij begint.";
+        });
+
+        // Als jij de tweede bent die verbindt
+        peer.on('error', (err) => {
+            if(err.type === 'unavailable-id') {
+                // ID is al in gebruik, dus wij zijn de "gast"
+                peer = new Peer();
+                setTimeout(() => {
+                    conn = peer.connect('zeeslag-' + id);
+                    setupConnection();
+                    document.getElementById('status').innerText = "Verbonden met Antoine! Antoine begint.";
+                    myTurn = false;
+                }, 500);
+            }
+        });
+    }
+
+    function setupConnection() {
+        conn.on('data', (data) => {
+            if(data.type === 'shoot') handleIncomingShot(data.index);
+            if(data.type === 'result') handleShotResult(data.index, data.hit);
+        });
+    }
+
+    function initGrids() {
+        const myGrid = document.getElementById('my-grid');
+        const enemyGrid = document.getElementById('enemy-grid');
+        myShips = generateRandomShips();
+
+        for(let i=0; i<100; i++) {
+            // Eigen bord
+            let cell = document.createElement('div');
+            cell.className = 'cell' + (myShips.includes(i) ? ' ship' : '');
+            cell.id = 'my-' + i;
+            myGrid.appendChild(cell);
+
+            // Vijand bord
+            let eCell = document.createElement('div');
+            eCell.className = 'cell';
+            eCell.id = 'enemy-' + i;
+            eCell.onclick = () => shoot(i);
+            enemyGrid.appendChild(eCell);
+        }
+    }
+
+    function shoot(index) {
+        if(!myTurn || !conn) return;
+        const cell = document.getElementById('enemy-' + index);
+        if(cell.classList.contains('hit') || cell.classList.contains('miss')) return;
+
+        conn.send({ type: 'shoot', index: index });
+        myTurn = false;
+        document.getElementById('status').innerText = "Schot gelost... Wachten op resultaat.";
+    }
+
+    function handleIncomingShot(index) {
+        const hit = myShips.includes(index);
+        const cell = document.getElementById('my-' + index);
+        cell.classList.add(hit ? 'hit' : 'miss');
+        
+        conn.send({ type: 'result', index: index, hit: hit });
+        myTurn = true;
+        document.getElementById('status').innerText = "Maxine heeft geschoten! Jouw beurt.";
+    }
+
+    function handleShotResult(index, hit) {
+        const cell = document.getElementById('enemy-' + index);
+        cell.classList.add(hit ? 'hit' : 'miss');
+        document.getElementById('status').innerText = hit ? "RAAK! Schiet nog eens!" : "Helaas, mis. Beurt aan Maxine.";
+        // Bij een hit mag je vaak nog een keer, maar voor de simpelheid wisselen we hier af.
+        myTurn = !hit; 
+        if(hit) myTurn = true; // Bonusbeurt bij raak!
+    }
+</script>
+</body>
+</html>
