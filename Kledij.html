@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <title>Maxine's Dressing Room</title>
+    <style>
+        body { background: #fdf6f0; display: flex; flex-direction: column; align-items: center; font-family: 'Segoe UI', sans-serif; }
+        .canvas { width: 300px; height: 500px; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); margin: 20px; }
+        .wardrobe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; }
+        button { padding: 10px; cursor: pointer; border: none; background: #fff; border: 1px solid #ddd; border-radius: 5px; transition: 0.3s; }
+        button:hover { background: #ffefd5; }
+    </style>
+</head>
+<body>
+
+    <h1>Maxine's Closet</h1>
+
+    <div class="canvas">
+        <svg viewBox="0 0 200 400" width="100%" height="100%">
+            <rect id="body" x="70" y="80" width="60" height="200" fill="#ffdbac" />
+            
+            <path id="layer-broek" d="M 70,180 L 130,180 L 135,320 L 110,320 L 105,250 L 95,250 L 90,320 L 65,320 Z" fill="#3B5998" />
+            
+            <path id="layer-trui" d="M 60,80 L 140,80 L 145,150 L 130,180 L 70,180 L 55,150 Z" fill="#D3D3D3" />
+        </svg>
+    </div>
+
+    <div class="wardrobe">
+        <button onclick="update('layer-trui', '#D3D3D3')">Grijze Trui</button>
+        <button onclick="update('layer-trui', '#87CEEB')">Blauwe Trui</button>
+        <button onclick="update('layer-trui', '#ff69b4')">Roze Trui</button>
+        
+        <button onclick="update('layer-broek', '#3B5998')">Denim Jeans</button>
+        <button onclick="update('layer-broek', '#2C3E50')">Zwart Chique</button>
+        <button onclick="update('layer-broek', '#A52A2A')">Bruine Pantalon</button>
+    </div>
+
+    <script>
+        function update(id, color) {
+            document.getElementById(id).setAttribute('fill', color);
+        }
+    </script>
+</body>
+</html>
